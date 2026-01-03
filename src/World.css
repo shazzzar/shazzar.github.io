@@ -1,0 +1,402 @@
+.world-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px 20px 20px;
+    color: #fff;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.world-terrain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #2d5016;
+    overflow: hidden;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.world-hud {
+    display: flex;
+    gap: 30px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+    padding: 15px 30px;
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+}
+
+.world-map {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #0a0a0a;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.world-row {
+    display: flex;
+    gap: 0;
+    flex: 1;
+}
+
+.world-tile {
+    flex: 1;
+    background: #2d5016;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1rem, 3vmin, 3rem);
+    border: 0.5px solid rgba(26, 26, 26, 0.3);
+    position: relative;
+}
+
+.world-tile.tree {
+    background: #1a3d0a;
+}
+
+.world-tile.rock {
+    background: #4a4a4a;
+}
+
+.world-tile.enemy {
+    background: #5a1a1a;
+    animation: enemy-pulse 1s infinite;
+}
+
+.world-tile.chest {
+    background: #5a4a1a;
+    animation: chest-glow 1.5s infinite;
+}
+
+.world-tile.player {
+    background: #3b82f6;
+    border: 0.5px solid #60a5fa;
+    z-index: 10;
+    font-size: 2.5rem;
+}
+
+@keyframes enemy-pulse {
+    0%, 100% { background: #5a1a1a; }
+    50% { background: #7a2a2a; }
+}
+
+@keyframes chest-glow {
+    0%, 100% { background: #5a4a1a; }
+    50% { background: #7a6a3a; }
+}
+
+/* COMBAT */
+.combat-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, #87ceeb 0%, #87ceeb 50%, #8b7355 50%, #654321 100%);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    image-rendering: pixelated;
+}
+
+.combat-arena {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+}
+
+.enemy-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.enemy-sprite {
+    font-size: 8rem;
+    animation: enemyFloat 2s ease-in-out infinite;
+    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.5));
+}
+
+.player-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.player-sprite {
+    font-size: 8rem;
+    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.5));
+}
+
+.combat-name-plate {
+    background: rgba(0, 0, 0, 0.8);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.combat-container {
+    background: #1a1a1a;
+    border: 3px solid #333;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+    color: #fff;
+    display: none; /* Hide old combat style */
+}
+
+.battle-ui {
+    background: rgba(0, 0, 0, 0.85);
+    border: 4px solid #fff;
+    border-radius: 12px;
+    margin: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.battle-text {
+    background: #f5f5f5;
+    border: 3px solid #000;
+    border-radius: 8px;
+    padding: 20px;
+    color: #000;
+    font-weight: 900;
+    font-size: 1.1rem;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.battle-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.battle-menu button {
+    padding: 20px;
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 900;
+    background: linear-gradient(135deg, #8b6914 0%, #d4af37 100%);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.battle-menu button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.battle-menu button:active {
+    transform: scale(0.95);
+}
+
+.combat-container h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #f44336;
+}
+
+.combat-divider {
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin: 30px 0;
+    color: #ffd700;
+}
+
+.hp-bar {
+    min-width: 250px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hp-bar .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f44336, #e91e63);
+    transition: width 0.5s;
+}
+
+.hp-bar.player .hp-fill {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+}
+
+.hp-bar span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 900;
+    font-size: 0.9rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+    z-index: 1;
+}
+
+/* COOLDOWN */
+.world-cooldown {
+    color: #000;
+    font-weight: 900;
+    font-size: 1.1rem;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.battle-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.battle-menu button {
+    padding: 20px;
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 900;
+    background: linear-gradient(135deg, #8b6914 0%, #d4af37 100%);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.battle-menu button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.battle-menu button:active {
+    transform: scale(0.95);
+}
+
+/* COOLDOWN */
+.world-cooldown {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+
+.world-cooldown h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.world-cooldown p {
+    font-size: 1.5rem;
+    opacity: 0.7;
+}
+
+@keyframes playerBounce {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+    50% { transform: translate(-50%, -50%) translateY(-5px); }
+}
+
+@keyframes enemyFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+@keyframes attackFlash {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(2); }
+}
+
+@keyframes damageFloat {
+    0% { opacity: 1; transform: translate(-50%, -80%) translateY(0); }
+    100% { opacity: 0; transform: translate(-50%, -80%) translateY(-25px); }
+}
+
+@keyframes flyToInventory {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    20% {
+        transform: translate(-50%, -50%) scale(1.4);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(calc(-50vw + 100px), -50%) scale(0.35);
+        opacity: 0;
+    }
+}
+
+.entity-sprite {
+    transition: all 0.3s;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+@keyframes attackPulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.15); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.attack-anim {
+    animation: attackPulse 0.25s ease;
+}
+
+.damage-number {
+    animation: damageFloat 0.7s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 0 8px rgba(0,0,0,0.6);
+}
+
+.world-pixel-bg {
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
+        repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px);
+    background-size: 8px 8px;
+}
