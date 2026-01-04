@@ -11,7 +11,7 @@ export function MaterialShop({
 }) {
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredItem, setHoveredItem] = useState(null);
-    // Base prices for materials based on rarity
+    
     const BASE_PRICES = {
         'COMMON': 10,
         'UNCOMMON': 25,
@@ -37,8 +37,7 @@ export function MaterialShop({
                 ...prev,
                 [material.id]: (prev[material.id] || 0) + 1
             }));
-            
-            // Play coin payout sound
+
             if (coinPayoutAudio?.current) {
                 coinPayoutAudio.current.currentTime = 0;
                 coinPayoutAudio.current.volume = 0.5;
@@ -47,7 +46,6 @@ export function MaterialShop({
         }
     };
 
-    // Sort materials by rarity
     const sortedMaterials = [...MATERIALS].sort((a, b) => {
         const rarityOrder = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC'];
         return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
@@ -115,7 +113,7 @@ export function MaterialShop({
                 })}
             </div>
 
-            {/* Global Tooltip */}
+            {}
             {hoveredItem && (() => {
                 const { mat, price, purchases, canAfford } = hoveredItem;
                 const rarityColors = {

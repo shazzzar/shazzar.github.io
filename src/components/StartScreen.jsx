@@ -14,7 +14,7 @@ export const StartScreen = ({ onStart }) => {
             zIndex: 10000,
             color: '#fff'
         }}>
-            {/* Title */}
+            {}
             <div style={{
                 marginBottom: '60px',
                 textAlign: 'center'
@@ -45,7 +45,7 @@ export const StartScreen = ({ onStart }) => {
                 </p>
             </div>
 
-            {/* How to Play Panel */}
+            {}
             <div className="rbx-panel" style={{
                 maxWidth: '600px',
                 padding: '0',
@@ -136,7 +136,7 @@ export const StartScreen = ({ onStart }) => {
                 </div>
             </div>
 
-            {/* Start Button */}
+            {}
             <button
                 className="rbx-btn"
                 onClick={onStart}
@@ -165,7 +165,7 @@ export const StartScreen = ({ onStart }) => {
                 ▶ Start Game
             </button>
 
-            {/* Version/Credit */}
+            {}
             <div style={{
                 position: 'absolute',
                 bottom: '20px',

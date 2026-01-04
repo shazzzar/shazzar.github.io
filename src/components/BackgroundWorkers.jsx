@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { MATERIALS } from '../utils/workerRNG';
 
-// Memoized FlyingItem to prevent unnecessary re-renders
 const FlyingItem = memo(({ matId, x, y, onComplete }) => {
     const mat = useMemo(() => MATERIALS.find(m => m.id === matId), [matId]);
 
@@ -23,7 +22,6 @@ const FlyingItem = memo(({ matId, x, y, onComplete }) => {
     );
 });
 
-// Memoized BackgroundWorker to prevent unnecessary re-renders
 const BackgroundWorker = memo(({ worker, gatherEvents, onVisualTrigger }) => {
     const [pos, setPos] = useState(() => ({
         x: Math.random() * (window.innerWidth - 150) + 75,
@@ -34,7 +32,6 @@ const BackgroundWorker = memo(({ worker, gatherEvents, onVisualTrigger }) => {
     const speed = useRef(0.2 + Math.random() * 0.5);
     const processedEvents = useRef(new Set());
 
-    // Wandering logic - only set new target periodically
     useEffect(() => {
         const moveInterval = setInterval(() => {
             setTarget({
@@ -47,7 +44,6 @@ const BackgroundWorker = memo(({ worker, gatherEvents, onVisualTrigger }) => {
         return () => clearInterval(moveInterval);
     }, []);
 
-    // Smooth interpolation movement
     useEffect(() => {
         let frame;
         const move = () => {
@@ -72,7 +68,6 @@ const BackgroundWorker = memo(({ worker, gatherEvents, onVisualTrigger }) => {
         return () => cancelAnimationFrame(frame);
     }, [target]);
 
-    // Track gather events - optimized with stable callback
     useEffect(() => {
         const myEvents = gatherEvents.filter(e => e.workerId === worker.id);
         myEvents.forEach(e => {
@@ -82,7 +77,6 @@ const BackgroundWorker = memo(({ worker, gatherEvents, onVisualTrigger }) => {
             }
         });
 
-        // Memory cleanup - limit to last 30 events
         if (processedEvents.current.size > 50) {
             const arr = Array.from(processedEvents.current);
             processedEvents.current = new Set(arr.slice(-30));
@@ -118,7 +112,6 @@ export const BackgroundWorkers = memo(({ equippedWorkers, gatherEvents, masterVo
     const batchTimer = useRef(null);
     const pickupAudio = useRef(null);
 
-    // Lazy audio initialization
     useEffect(() => {
         pickupAudio.current = new Audio('/sounds/pick-92276.mp3');
         return () => {
@@ -129,19 +122,16 @@ export const BackgroundWorkers = memo(({ equippedWorkers, gatherEvents, masterVo
         };
     }, []);
 
-    // Volume sync
     useEffect(() => {
         if (pickupAudio.current) {
             pickupAudio.current.volume = masterVolume * 0.8;
         }
     }, [masterVolume]);
 
-    // Memoize worker list
     const allWorkers = useMemo(() => Object.values(equippedWorkers).flat(), [equippedWorkers]);
 
-    // Stable handler for flight start
     const handleFlightStart = useCallback((event, startPos) => {
-        // Rare Gather detection (< 1%)
+        
         if (event.chance < 0.01) {
             const matName = MATERIALS.find(m => m.id === event.matId)?.name;
             setRareNotice({ id: Math.random(), name: matName });
@@ -153,14 +143,12 @@ export const BackgroundWorkers = memo(({ equippedWorkers, gatherEvents, masterVo
             return [...prev, { ...event, x: startPos.x, y: startPos.y }];
         });
 
-        // Play pick-up sound
         if (pickupAudio.current) {
             pickupAudio.current.currentTime = 0;
             pickupAudio.current.play().catch(() => { });
         }
     }, []);
 
-    // Stable handler for flight end
     const handleFlightEnd = useCallback((flight) => {
         setFlights(prev => prev.filter(f => f.eventId !== flight.eventId));
 

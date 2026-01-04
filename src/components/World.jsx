@@ -35,7 +35,7 @@ export function World({
     const baseHP = 100;
     const maxPlayerHP = baseHP + bonusMaxHP;
     const [playerHP, setPlayerHP] = useState(maxPlayerHP);
-    const [itemDrop, setItemDrop] = useState(null); // battle drop animation
+    const [itemDrop, setItemDrop] = useState(null); 
     const [heroAttacking, setHeroAttacking] = useState(false);
     const [enemyAttacking, setEnemyAttacking] = useState(false);
     const [damageNumbers, setDamageNumbers] = useState([]);
@@ -46,21 +46,18 @@ export function World({
     const TREE_RADIUS = 15;
     const ROCK_RADIUS = 12;
     const MONSTER_RADIUS = 44;
-    const ITEM_RADIUS = 30; // Pickup radius for dropped items
+    const ITEM_RADIUS = 30; 
 
-    const MOVE_SPEED = 5; // pixels per frame
+    const MOVE_SPEED = 5; 
 
-    // Reset HP when max HP changes (from upgrades)
     useEffect(() => {
         setPlayerHP(maxPlayerHP);
     }, [maxPlayerHP]);
 
-    // Generate world entities
     useEffect(() => {
         generateWorld();
     }, []);
 
-    // Show return button after 10 seconds
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowReturnButton(true);
@@ -74,7 +71,7 @@ export function World({
         const numRocks = 1000;
         const numMonsters = 800;
         const worldRadius = 8000;
-        const spawnClearRadius = 400; // Clear area around spawn
+        const spawnClearRadius = 400; 
         const nearSpawnMonsters = 8;
 
         for (let i = 0; i < numTrees; i++) {
@@ -83,7 +80,7 @@ export function World({
                 x = (Math.random() - 0.5) * worldRadius * 2;
                 y = (Math.random() - 0.5) * worldRadius * 2;
                 distFromSpawn = Math.sqrt(x * x + y * y);
-            } while (distFromSpawn < spawnClearRadius); // Keep trying until outside spawn area
+            } while (distFromSpawn < spawnClearRadius); 
             
             newEntities.push({
                 id: `tree-${i}`,
@@ -123,7 +120,7 @@ export function World({
                 distFromSpawn = Math.sqrt(startX * startX + startY * startY);
             } while (distFromSpawn < spawnClearRadius);
             
-            const isBoss = Math.random() < 0.05; // 5% chance for boss
+            const isBoss = Math.random() < 0.05; 
             newEntities.push({
                 id: `monster-${i}`,
                 type: 'monster',
@@ -145,10 +142,9 @@ export function World({
             });
         }
 
-        // Ensure some monsters are near spawn so encounters happen quickly (but not TOO close)
         for (let i = 0; i < nearSpawnMonsters; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const dist = spawnClearRadius + 50 + Math.random() * 200; // Just outside clear radius
+            const dist = spawnClearRadius + 50 + Math.random() * 200; 
             const startX = Math.cos(angle) * dist;
             const startY = Math.sin(angle) * dist;
             newEntities.push({
@@ -171,7 +167,6 @@ export function World({
             });
         }
 
-        // Add house at spawn (200px away, which is about 2 tiles)
         newEntities.push({
             id: 'spawn-house',
             type: 'house',
@@ -187,7 +182,6 @@ export function World({
         entitiesRef.current = newEntities;
     };
 
-    // Keep ref in sync with state
     useEffect(() => {
         entitiesRef.current = entities;
     }, [entities]);
@@ -206,20 +200,18 @@ export function World({
         const currentEntities = entitiesRef.current;
         for (const entity of currentEntities) {
             if (!entity.collision || !isBlocking(entity)) continue;
-            
-            // Use rectangular collision for trees
+
             if (entity.type === 'tree') {
-                const treeWidth = 30;  // Tree trunk width
-                const treeHeight = 60; // Tree height
+                const treeWidth = 30;  
+                const treeHeight = 60; 
                 const playerSize = PLAYER_RADIUS;
-                
-                // Check if player rectangle overlaps with tree rectangle
+
                 if (Math.abs(newX - entity.x) < (treeWidth + playerSize) / 2 &&
                     Math.abs(newY - entity.y) < (treeHeight + playerSize) / 2) {
                     return true;
                 }
             } else {
-                // Use circular collision for rocks and monsters
+                
                 const radius = entity.radius || TREE_RADIUS;
                 const dx = newX - entity.x;
                 const dy = newY - entity.y;
@@ -260,7 +252,7 @@ export function World({
     useEffect(() => {
         const monsterInterval = setInterval(() => {
             setEntities(prev => {
-                if (inCombat) return prev; // freeze monsters during combat
+                if (inCombat) return prev; 
                 return prev.map(entity => {
                     if (entity.type !== 'monster' || !entity.path) return entity;
                     const targetPoint = entity.path[entity.pathIndex];
@@ -289,12 +281,11 @@ export function World({
         return () => clearInterval(monsterInterval);
     }, [inCombat]);
 
-    // E key listener for entering house
     useEffect(() => {
         const handleKeyPress = (e) => {
             if (e.key === 'e' || e.key === 'E') {
                 if (nearHouse && !inCombat) {
-                    // Trigger shop switch with background color
+                    
                     window.dispatchEvent(new CustomEvent('switchToShop', {
                         detail: { bgColor: '#1a1a1a' }
                     }));
@@ -346,8 +337,7 @@ export function World({
                 }
                 const newX = prev.x + dx;
                 const newY = prev.y + dy;
-                
-                // Check if player is near house door
+
                 const isNearHouseDoor = checkHouseDoor(newX, newY);
                 setNearHouse(isNearHouseDoor);
                 
@@ -389,46 +379,46 @@ export function World({
 
     const dropRelic = () => {
         const relicPool = [
-            // COMMON (40%)
+            
             { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost', value: 0.1 },
             { name: 'Coin Charm', desc: '+20% Coin drops', rarity: 'COMMON', effect: 'coin_boost', value: 0.2 },
             { name: 'Swift Relic', desc: '+10% Gather speed', rarity: 'COMMON', effect: 'gather_speed', value: 0.1 },
-            // UNCOMMON (30%)
+            
             { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost', value: 0.05 },
             { name: 'Fortune Stone', desc: '+15% Coin drops', rarity: 'UNCOMMON', effect: 'coin_boost', value: 0.15 },
             { name: 'Time Shard', desc: '+15s Day duration', rarity: 'UNCOMMON', effect: 'day_extend', value: 15 },
-            // RARE (20%)
+            
             { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost', value: 0.03 },
             { name: 'Battle Relic', desc: '+5 Bonus damage', rarity: 'RARE', effect: 'damage_boost', value: 5 },
             { name: 'Shield Relic', desc: '+25 Max HP', rarity: 'RARE', effect: 'hp_boost', value: 25 },
-            // EPIC (9%)
+            
             { name: 'Golden Idol', desc: '+50% Coin drops', rarity: 'EPIC', effect: 'coin_boost', value: 0.5 },
             { name: 'Auto Recruiter', desc: 'Recruit +1 worker on day change', rarity: 'EPIC', effect: 'auto_recruit', value: 1 },
-            // MYTHIC (1%)
+            
             { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll', value: 1 }
         ];
         
         let relic;
         const rand = Math.random();
         if (rand < 0.01) {
-            // Mythic - 1%
+            
             relic = relicPool[11];
         } else if (rand < 0.10) {
-            // Epic - 9%
+            
             relic = relicPool[9 + Math.floor(Math.random() * 2)];
         } else if (rand < 0.30) {
-            // Rare - 20%
+            
             relic = relicPool[6 + Math.floor(Math.random() * 3)];
         } else if (rand < 0.60) {
-            // Uncommon - 30%
+            
             relic = relicPool[3 + Math.floor(Math.random() * 3)];
         } else {
-            // Common - 40%
+            
             relic = relicPool[Math.floor(Math.random() * 3)];
         }
         
         setRelics(prev => [...prev, { ...relic, id: Date.now() }]);
-        // Show relic as item drop animation instead of blocking alert
+        
         setItemDrop({
             id: Date.now(),
             emoji: '🏆',
@@ -461,7 +451,7 @@ export function World({
         let enemyHP = enemyState.hp || 30;
         let playerHPTemp = playerHP;
         let battleEnded = false;
-        let timeoutIds = []; // Track all timeouts
+        let timeoutIds = []; 
 
         const clearAllTimeouts = () => {
             timeoutIds.forEach(id => clearTimeout(id));
@@ -474,8 +464,7 @@ export function World({
                 setHeroAttacking(true);
                 const attackTimeout = setTimeout(() => setHeroAttacking(false), 180);
                 timeoutIds.push(attackTimeout);
-                
-                // Play fireball sound only if battle is still active
+
                 if (!battleEnded && combatActiveRef.current && fireballAudio?.current) {
                     fireballAudio.current.currentTime = 0;
                     fireballAudio.current.volume = 0.5;
@@ -498,8 +487,7 @@ export function World({
                 setEnemyAttacking(true);
                 const attackTimeout = setTimeout(() => setEnemyAttacking(false), 180);
                 timeoutIds.push(attackTimeout);
-                
-                // Play monster attack sound based on boss status only if battle is still active
+
                 if (!battleEnded && combatActiveRef.current) {
                     if (enemyState.isBoss && largeMonsterAttackAudio?.current) {
                         largeMonsterAttackAudio.current.currentTime = 0;
@@ -542,7 +530,7 @@ export function World({
                         battleEnded = true;
                         clearAllTimeouts();
                         finishDefeat();
-                        // Force stop by clearing refs and state
+                        
                         setCurrentEnemy(null);
                         setEngagedMonsterId(null);
                         setEngagedMonsterPos(null);
@@ -570,18 +558,15 @@ export function World({
         try {
             combatActiveRef.current = false;
 
-            // COIN DROP LOGIC - Always drop 100 coins per enemy
             const baseCoins = 100;
             addCoins(baseCoins);
-            
-            // Play coin drop sound
+
             if (coinDropAudio?.current) {
                 coinDropAudio.current.currentTime = 0;
                 coinDropAudio.current.volume = 1.0;
                 coinDropAudio.current.play().catch(e => console.log("Audio play blocked"));
             }
 
-            // Only bosses drop relics, no material drops at all
             if (isBoss) {
                 dropRelic();
             }
@@ -626,7 +611,7 @@ export function World({
 
     const enemyAutoAttack = (enemy) => {
         if (!enemy || !enemy.attacks || enemy.attacks.length === 0) {
-            return 10; // fallback damage
+            return 10; 
         }
         const atk = enemy.attacks[Math.floor(Math.random() * enemy.attacks.length)];
         return atk?.damage || 10;
@@ -695,9 +680,6 @@ export function World({
         };
     };
 
-    // Moved dropRelic and dropWorldLoot to top of file
-
-
     if (worldCooldown > 0) {
         return (
             <div className="world-cooldown">
@@ -706,7 +688,7 @@ export function World({
                 <button
                     className="rbx-btn"
                     onClick={() => {
-                        // Go back to SHOP tab - dispatch custom event
+                        
                         window.dispatchEvent(new CustomEvent('switchToShop'));
                     }}
                     style={{
@@ -803,7 +785,6 @@ export function World({
                         </div>
                     ))}
 
-
                     {damageNumbers.map(d => (
                         <div
                             key={d.id}
@@ -824,7 +805,7 @@ export function World({
                 </div>
             </div>
 
-            {/* RETURN TO HOUSE BUTTON */}
+            {}
             {showReturnButton && !inCombat && (
                 <button
                     onClick={() => {
@@ -860,7 +841,7 @@ export function World({
                 </button>
             )}
 
-            {/* PRESS E TO ENTER PROMPT */}
+            {}
             {nearHouse && !inCombat && (
                 <div style={{
                     position: 'fixed',
@@ -881,7 +862,6 @@ export function World({
                     Press <span style={{ color: '#d4af37' }}>E</span> to Enter
                 </div>
             )}
-
 
             {itemDrop && (
                 <div

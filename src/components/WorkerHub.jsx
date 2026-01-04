@@ -9,7 +9,7 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            {/* EQUIPMENT HEADER */}
+            {}
             <div style={{
                 padding: '12px 20px',
                 background: '#1a1a1a',
@@ -88,7 +88,7 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                 </div>
             </div>
 
-            {/* AUTO-DELETE OVERLAY */}
+            {}
             {showDeleteConfig && (
                 <div style={{
                     padding: '15px 20px',
@@ -129,7 +129,7 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                 </div>
             )}
 
-            {/* GRID - UNIFIED WITH INVENTORY */}
+            {}
             <div className="inventory-grid">
                 {filteredWorkers.map((w) => {
                     const isEquipped = Object.values(equippedWorkers).flat().some(eq => eq.id === w.id);
@@ -182,7 +182,7 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                 )}
             </div>
 
-            {/* Global Worker Tooltip */}
+            {}
             {hoveredWorker && (() => {
                 const w = hoveredWorker;
                 const rarityStats = {

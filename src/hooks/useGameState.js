@@ -6,9 +6,9 @@ export const UI_PHASES = {
     NIGHT: 'night',
 };
 
-const BASE_PHASE_DURATION = 120; // 2 minutes base
+const BASE_PHASE_DURATION = 120; 
 const GATHER_INTERVAL = 3000;
-const CUSTOMER_INTERVAL = 8000; // New customer every 8 seconds base
+const CUSTOMER_INTERVAL = 8000; 
 
 export function useGameState(gameStarted = true) {
     const [honor, setHonor] = useState(0);
@@ -38,12 +38,10 @@ export function useGameState(gameStarted = true) {
     const [customers, setCustomers] = useState([]);
     const [shadyClientSpawned, setShadyClientSpawned] = useState(false);
 
-    // DISCOVERY TRACKING - persists even when deleted (MUST BE BEFORE addItemToInventory)
     const [discoveredMaterials, setDiscoveredMaterials] = useState(new Set());
     const [discoveredCrafted, setDiscoveredCrafted] = useState(new Set());
-    const [discoveredWorkers, setDiscoveredWorkers] = useState(new Set()); // Format: "rarityKey-type-variantKey"
+    const [discoveredWorkers, setDiscoveredWorkers] = useState(new Set()); 
 
-    // ROBUST INVENTORY ADD FUNCTION
     const addItemToInventory = useCallback((itemId, quantity = 1) => {
         console.log(`[INVENTORY] Adding ${quantity}x ${itemId}`);
         setInventory(prev => {
@@ -55,7 +53,7 @@ export function useGameState(gameStarted = true) {
                 [itemId]: newCount
             };
         });
-        // Also mark as discovered
+        
         setDiscoveredMaterials(prev => {
             const next = new Set(prev);
             next.add(itemId);
@@ -69,7 +67,6 @@ export function useGameState(gameStarted = true) {
     const [rebirthCount, setRebirthCount] = useState(0);
     const [showTutorial, setShowTutorial] = useState(true);
 
-    // GEM & SHOP SYSTEM
     const [gems, setGems] = useState(0);
     const [shopLevel, setShopLevel] = useState(1);
     const [dayDuration, setDayDuration] = useState(BASE_PHASE_DURATION);
@@ -80,23 +77,19 @@ export function useGameState(gameStarted = true) {
     const [workerSlots, setWorkerSlots] = useState(3);
     const [customerSpawnMod, setCustomerSpawnMod] = useState(1.0);
     const [maxCustomers, setMaxCustomers] = useState(8);
-    const [gatherSpeed, setGatherSpeed] = useState(1.0); // multiplier for gather interval
+    const [gatherSpeed, setGatherSpeed] = useState(1.0); 
     const [startingHonor, setStartingHonor] = useState(0);
 
-    // WORLD & RELIC SYSTEM
     const [relics, setRelics] = useState([]);
     const [worldCooldown, setWorldCooldown] = useState(0);
 
-    // COMBAT STATS
-    const [bonusDamage, setBonusDamage] = useState(0); // flat bonus damage
-    const [bonusMaxHP, setBonusMaxHP] = useState(0); // flat bonus max HP
+    const [bonusDamage, setBonusDamage] = useState(0); 
+    const [bonusMaxHP, setBonusMaxHP] = useState(0); 
 
-    // COIN SYSTEM
     const [coins, setCoins] = useState(0);
-    const [coinDropBonus, setCoinDropBonus] = useState(1.0); // multiplier for coin drops
-    const [materialPurchases, setMaterialPurchases] = useState({}); // { materialId: purchaseCount }
+    const [coinDropBonus, setCoinDropBonus] = useState(1.0); 
+    const [materialPurchases, setMaterialPurchases] = useState({}); 
 
-    // Add coins helper
     const addCoins = useCallback((amount) => {
         const finalAmount = Math.floor(amount * coinDropBonus);
         console.log(`[COINS] Adding ${finalAmount} coins (base: ${amount}, bonus: ${coinDropBonus}x)`);
@@ -108,7 +101,7 @@ export function useGameState(gameStarted = true) {
         setAutoDeleteRarities(prev => {
             const isAddingToAutoDelete = !prev.includes(rarityKey);
             if (isAddingToAutoDelete) {
-                // Purge existing unequipped workers of this rarity
+                
                 setWorkers(currentWorkers => {
                     const equippedIds = Object.values(equippedWorkers).flat().map(w => w.id);
                     return currentWorkers.filter(w =>
@@ -123,14 +116,13 @@ export function useGameState(gameStarted = true) {
     }, [equippedWorkers]);
 
     useEffect(() => {
-        if (!gameStarted) return; // Don't start timer until game starts
+        if (!gameStarted) return; 
         
         let timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     const nextPhase = phase === UI_PHASES.DAY ? UI_PHASES.NIGHT : UI_PHASES.DAY;
 
-                    // NIGHT TRANSITION PENALTY - lose 20% honor per unfulfilled customer
                     if (nextPhase === UI_PHASES.NIGHT && customers.length > 0) {
                         setHonor(currentHonor => {
                             const penaltyPerClient = Math.floor(currentHonor * 0.2);
@@ -140,13 +132,11 @@ export function useGameState(gameStarted = true) {
                         setCustomers([]);
                     }
 
-                    // Clear customers when transitioning to DAY
                     if (nextPhase === UI_PHASES.DAY) {
                         setCustomers([]);
                         setShadyClientSpawned(false);
                     }
 
-                    // Decrement world cooldown on new day
                     if (nextPhase === UI_PHASES.DAY && worldCooldown > 0) {
                         setWorldCooldown(prev => Math.max(0, prev - 1));
                     }
@@ -164,31 +154,26 @@ export function useGameState(gameStarted = true) {
     const performRecruitRoll = useCallback(() => {
         if (isRolling) return;
         setIsRolling(true);
-        const rollTime = fastRoll ? 160 : 800; // 800ms is half of sound (1608ms), fast is 5x faster
+        const rollTime = fastRoll ? 160 : 800; 
         setTimeout(() => {
             let currentLuck = luckBoost ? permanentLuck : 1.0;
 
-            // Apply luck boost relic
             const luckRelic = relics.find(r => r.effect === 'luck_boost');
             if (luckRelic) {
                 currentLuck *= (1 + luckRelic.value);
             }
 
-            // Check for double roll relic
             const doubleRollRelic = relics.find(r => r.effect === 'double_roll');
             const rollCount = doubleRollRelic ? 2 : 1;
 
             for (let i = 0; i < rollCount; i++) {
                 const worker = rollWorker(currentLuck);
 
-                // Auto-delete logic: check if rolled rarity is in the delete list
-                // BUT: always keep variant workers regardless of rarity
                 const isVariant = worker.variantKey && worker.variantKey !== 'NORMAL';
                 if (!autoDeleteRarities.includes(worker.rarityKey) || isVariant) {
                     setWorkers(prev => [...prev, worker]);
                 }
 
-                // Always track discovered workers, even if auto-deleted
                 const workerKey = `${worker.rarityKey}-${worker.type}-${worker.variantKey || 'NORMAL'}`;
                 setDiscoveredWorkers(prev => {
                     const next = new Set(prev);
@@ -217,7 +202,6 @@ export function useGameState(gameStarted = true) {
 
     const [gatherEvents, setGatherEvents] = useState([]);
 
-    // GATHERING LOGIC (NO PASSIVE HONOR)
     useEffect(() => {
         const gatherInterval = setInterval(() => {
             let matsFound = {};
@@ -225,7 +209,7 @@ export function useGameState(gameStarted = true) {
 
             Object.keys(equippedWorkers).forEach(type => {
                 equippedWorkers[type].forEach(w => {
-                    // Rarity multipliers for gathering
+                    
                     const rarityMultipliers = {
                         COMMON: { chance: 1.0, amount: 1 },
                         UNCOMMON: { chance: 1.5, amount: 1 },
@@ -236,7 +220,6 @@ export function useGameState(gameStarted = true) {
                     };
                     const multiplier = rarityMultipliers[w.rarityKey] || rarityMultipliers.COMMON;
 
-                    // Apply gather boost relic
                     let gatherMultiplier = { ...multiplier };
                     const gatherRelic = relics.find(r => r.effect === 'gather_boost');
                     if (gatherRelic) {
@@ -277,7 +260,7 @@ export function useGameState(gameStarted = true) {
                     });
                     return updated;
                 });
-                // Track discovered materials
+                
                 setDiscoveredMaterials(prev => {
                     const next = new Set(prev);
                     Object.keys(matsFound).forEach(k => next.add(k));
@@ -290,8 +273,6 @@ export function useGameState(gameStarted = true) {
         return () => clearInterval(gatherInterval);
     }, [equippedWorkers, phase, gatherSpeed, relics]);
 
-    // AUTO-DISCOVER MATERIALS FROM INVENTORY
-    // This ensures that materials gained from sources other than gathering (like World drops) are discovered
     useEffect(() => {
         setDiscoveredMaterials(prev => {
             const next = new Set(prev);
@@ -306,7 +287,6 @@ export function useGameState(gameStarted = true) {
         });
     }, [inventory]);
 
-    // CUSTOMER SYSTEM
     useEffect(() => {
         const custTimer = setInterval(() => {
             if (phase === UI_PHASES.NIGHT) return;
@@ -319,9 +299,8 @@ export function useGameState(gameStarted = true) {
                 return acc + p;
             }, 0);
 
-            // Chance to spawn depends on salesman power and mod
             if (Math.random() < (0.3 + (salesmanPower * 0.05)) * customerSpawnMod) {
-                // Filter items based on day count - only BASIC tier items during first 5 days
+                
                 const availableItems = dayCount <= 5
                     ? CRAFTED_ITEMS.filter(item => item.tier === 'BASIC')
                     : CRAFTED_ITEMS;
@@ -346,13 +325,11 @@ export function useGameState(gameStarted = true) {
         return () => clearInterval(custTimer);
     }, [customers, equippedWorkers.Salesman, phase, dayCount]);
 
-    // SHADY CLIENT SYSTEM (NIGHT ONLY)
     useEffect(() => {
         if (phase !== UI_PHASES.NIGHT || shadyClientSpawned) return;
 
-        // 50% chance to spawn 1 shady client per night
         if (Math.random() < 0.5) {
-            // Only hard items: ADVANCED, LEGENDARY, or MYTHIC tier
+            
             const hardItems = CRAFTED_ITEMS.filter(item => 
                 item.tier === 'ADVANCED' || item.tier === 'LEGENDARY' || item.tier === 'MYTHIC'
             );
@@ -362,7 +339,7 @@ export function useGameState(gameStarted = true) {
                 const tierMultipliers = { ADVANCED: 25, LEGENDARY: 500, MYTHIC: 10000 };
                 const tierMult = tierMultipliers[randomItem.tier] || 1;
                 const baseReward = 50 + (Object.values(randomItem.recipe).reduce((a, b) => a + b, 0) * 20);
-                const reward = baseReward * tierMult * 2; // Double reward for shady clients
+                const reward = baseReward * tierMult * 2; 
 
                 const shadyClient = {
                     id: Date.now(),
@@ -389,7 +366,6 @@ export function useGameState(gameStarted = true) {
             }, 0);
             let bonusMultiplier = 1 + (salesmanPower * 0.1);
 
-            // Apply honor boost relic
             const honorRelic = relics.find(r => r.effect === 'honor_boost');
             if (honorRelic) {
                 bonusMultiplier *= (1 + honorRelic.value);
@@ -416,7 +392,7 @@ export function useGameState(gameStarted = true) {
                 next.crafted[item.id] = (next.crafted[item.id] || 0) + quantity;
                 return next;
             });
-            // Track discovered crafted items
+            
             setDiscoveredCrafted(prev => {
                 const next = new Set(prev);
                 next.add(item.id);
@@ -427,7 +403,6 @@ export function useGameState(gameStarted = true) {
         return false;
     }, [inventory]);
 
-    // REBIRTH SYSTEM
     const canRebirth = honor >= 10000 && dayCount >= 10;
 
     const performRebirth = useCallback(() => {
@@ -459,7 +434,6 @@ export function useGameState(gameStarted = true) {
         return true;
     }, [canRebirth, gemMultiplier, rebirthCount, dayDuration, startingHonor]);
 
-    // AUTO-WORKERS
     useEffect(() => {
         if (!hasCrafter && !hasSeller) return;
         const interval = setInterval(() => {

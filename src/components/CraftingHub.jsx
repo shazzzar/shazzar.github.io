@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { MATERIALS, CRAFTED_ITEMS } from '../utils/workerRNG';
 
 export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
-    const [staged, setStaged] = useState({}); // { matId: count }
+    const [staged, setStaged] = useState({}); 
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredItem, setHoveredItem] = useState(null);
 
@@ -22,7 +22,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
 
     const clearStage = () => setStaged({});
 
-    // Find if current staged materials match a recipe (supports bulk)
     const { resultItem, multiplier } = useMemo(() => {
         const stagedEntries = Object.entries(staged).filter(([_, count]) => count > 0);
         if (stagedEntries.length === 0) return { resultItem: null, multiplier: 0 };
@@ -30,7 +29,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
         for (const item of CRAFTED_ITEMS) {
             const recipeEntries = Object.entries(item.recipe);
 
-            // Must have exactly the same types of materials
             if (recipeEntries.length !== stagedEntries.length) continue;
 
             const firstMat = recipeEntries[0];
@@ -49,8 +47,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
 
     const handleCraft = () => {
         if (!resultItem) return;
-        
-        // Play sound effects twice with slower timing
+
         if (bingAudio?.current) {
             bingAudio.current.currentTime = 0;
             bingAudio.current.volume = 0.4;
@@ -106,7 +103,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
 
     return (
         <div style={{ display: 'flex', gap: '20px', padding: '20px', height: '100%', minHeight: '480px' }}>
-            {/* LEFT: RECIPE LIST */}
+            {}
             <div style={{ flex: 1.5, background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '15px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: '900', opacity: 0.5, marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>Recipe Book</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -173,7 +170,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                 </div>
             </div>
 
-            {/* RIGHT: CRAFTING WORKSTATION */}
+            {}
             <div style={{ flex: 2, background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: '900', opacity: 0.5, textTransform: 'uppercase' }}>Workstation Slot</div>
@@ -194,7 +191,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                     </button>
                 </div>
 
-                {/* THE SLOT SQUARE */}
+                {}
                 <div style={{
                     flex: 1, border: '2px dashed #333', borderRadius: '15px',
                     display: 'flex', flexDirection: 'column', flexWrap: 'wrap', gap: '10px', padding: '15px', alignContent: 'center', justifyContent: 'center',
@@ -226,7 +223,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                     )}
                 </div>
 
-                {/* RESULT PREVIEW */}
+                {}
                 <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px', textAlign: 'center' }}>
                     {resultItem ? (
                         <div className="roll-anim">
@@ -240,7 +237,7 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                 </div>
             </div>
 
-            {/* Global Tooltip */}
+            {}
             {hoveredItem && (
                 <div 
                     className="item-tooltip" 

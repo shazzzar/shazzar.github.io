@@ -11,7 +11,7 @@ export function ShopUpgrades({
     bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP,
     coinDropBonus, setCoinDropBonus
 }) {
-    // HONOR COSTS
+    
     const LUCK_COST = 500 * Math.pow(2, (permanentLuck - 1) / 0.1);
     const DAY_COST = 1000 * Math.pow(1.5, (dayDuration - 120) / 30);
     const NIGHT_COST = 1000 * Math.pow(1.5, (nightDuration - 120) / 30);
@@ -77,7 +77,6 @@ export function ShopUpgrades({
         }
     };
 
-    // GEM SHOP PURCHASES
     const buyCrafter = () => {
         if (gems >= 500 && !hasCrafter) {
             setGems(prev => prev - 500);
@@ -146,7 +145,7 @@ export function ShopUpgrades({
                     afford={honor >= COIN_BONUS_COST}
                 />
 
-                {/* Level Locked Upgrades */}
+                {}
                 <ShopItem
                     title="WORKER SLOTS"
                     icon="👥"
@@ -214,7 +213,7 @@ export function ShopUpgrades({
 
 function ShopItem({ title, icon, desc, value, cost, currency, onBuy, afford, owned, locked, lockText }) {
     const isGems = currency === 'GEMS';
-    const canAfford = afford || (isGems && !owned); // Simplified for this logic
+    const canAfford = afford || (isGems && !owned); 
 
     return (
         <div className={`inv-item ${locked ? 'locked' : ''}`} style={{

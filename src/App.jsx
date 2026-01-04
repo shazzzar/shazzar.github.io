@@ -20,8 +20,8 @@ function App() {
     const [invSubTab, setInvSubTab] = useState('materials');
     const [indexSubTab, setIndexSubTab] = useState('materials');
     const [workerVariantTab, setWorkerVariantTab] = useState('NORMAL');
-    const [epicReveal, setEpicReveal] = useState(null); // null, 'LEGENDARY', or 'MYTHIC'
-    const [variantReveal, setVariantReveal] = useState(null); // null or variant object
+    const [epicReveal, setEpicReveal] = useState(null); 
+    const [variantReveal, setVariantReveal] = useState(null); 
     const [shuffleText, setShuffleText] = useState("");
     const [doorTransition, setDoorTransition] = useState(false);
     const [doorBgColor, setDoorBgColor] = useState('#2d5016');
@@ -32,7 +32,7 @@ function App() {
     const [hoveredInvItem, setHoveredInvItem] = useState(null);
     const [tabTooltipPos, setTabTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredTab, setHoveredTab] = useState(null);
-    const [tabTooltipSide, setTabTooltipSide] = useState('right'); // 'left' or 'right'
+    const [tabTooltipSide, setTabTooltipSide] = useState('right'); 
 
     const {
         honor, setHonor, phase, timeLeft, dayCount, lastRecruit, isRolling, performRecruitRoll,
@@ -67,7 +67,7 @@ function App() {
     useEffect(() => {
         let interval;
         if (isRolling) {
-            // Only show animation text if NOT fast rolling
+            
             if (!fastRoll) {
                 const names = ["SHUFFLING...", "ROLLING...", "CURSING...", "VOID CALLING...", "RECRUITING..."];
                 interval = setInterval(() => {
@@ -75,10 +75,9 @@ function App() {
                 }, 80);
             }
 
-            // Audio Logic
             rollAudio.current.currentTime = 0;
-            rollAudio.current.playbackRate = fastRoll ? 5.0 : 1.0; // 5x speed for fast roll
-            rollAudio.current.loop = false; // Don't loop, play once to match duration
+            rollAudio.current.playbackRate = fastRoll ? 5.0 : 1.0; 
+            rollAudio.current.loop = false; 
             rollAudio.current.play().catch(e => console.log("Audio play blocked"));
         } else {
             setShuffleText("");
@@ -110,7 +109,6 @@ function App() {
         }
     }, [lastRecruit, isRolling]);
 
-    // Variant reveal animation (for non-Normal variants)
     useEffect(() => {
         if (lastRecruit && lastRecruit.variantKey && lastRecruit.variantKey !== 'NORMAL' && !isRolling) {
             setVariantReveal(lastRecruit);
@@ -124,10 +122,9 @@ function App() {
         }
     }, [lastRecruit, isRolling]);
 
-    // Auto-roll logic: wait for reveals to finish before next roll
     useEffect(() => {
         if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
-            // Wait a bit after animations clear before starting next roll
+            
             const timer = setTimeout(() => {
                 if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
                     performRecruitRoll();
@@ -176,15 +173,14 @@ function App() {
         return CRAFTED_ITEMS.find(i => i.id === id)?.emoji || '⚔️';
     }, []);
 
-    // Listen for switchToShop event from World component
     useEffect(() => {
         const handleSwitch = (event) => {
-            // Play door sound and start transition
+            
             if (doorOpenAudio?.current) {
                 doorOpenAudio.current.currentTime = 0;
                 doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
             }
-            setDoorBgColor('shop'); // Mark as shop background
+            setDoorBgColor('shop'); 
             setDoorTransition(true);
             setTimeout(() => {
                 setMainTab('SHOP');
@@ -195,26 +191,22 @@ function App() {
         return () => window.removeEventListener('switchToShop', handleSwitch);
     }, [doorOpenAudio]);
 
-    // Track max honor
     useEffect(() => {
         if (honor > maxHonor) {
             setMaxHonor(honor);
         }
     }, [honor, maxHonor]);
 
-    // Check game over condition: when transitioning to DAY with 0 honor
     useEffect(() => {
         if (gameStarted && phase === UI_PHASES.DAY && honor === 0 && dayCount > 1) {
             setGameOver(true);
         }
     }, [gameStarted, phase, honor, dayCount]);
 
-    // Show start screen if game not started
     if (!gameStarted) {
         return <StartScreen onStart={() => setGameStarted(true)} />;
     }
 
-    // Show game over screen
     if (gameOver) {
         return (
             <GameOverScreen
@@ -234,7 +226,7 @@ function App() {
             <div className={`app-container ${phase} ${epicReveal ? 'screen-shake' : ''}`}>
             <BackgroundWorkers equippedWorkers={equippedWorkers} gatherEvents={gatherEvents} masterVolume={masterVolume} />
 
-            {/* MAIN TAB NAVIGATION */}
+            {}
             {mainTab !== 'WORLD' && (
             <div style={{
                 position: 'fixed',
@@ -262,19 +254,19 @@ function App() {
                 <button
                     className="rbx-btn"
                     onClick={() => {
-                        if (worldCooldown > 0) return; // Block if on cooldown
+                        if (worldCooldown > 0) return; 
                         if (mainTab !== 'WORLD') {
-                            // Play door sound and start transition
+                            
                             if (doorOpenAudio?.current) {
                                 doorOpenAudio.current.currentTime = 0;
                                 doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
                             }
-                            setDoorBgColor('world'); // World background (green)
+                            setDoorBgColor('world'); 
                             setDoorTransition(true);
                             setTimeout(() => {
                                 setMainTab('WORLD');
                                 setDoorTransition(false);
-                            }, 500); // Transition duration
+                            }, 500); 
                         }
                     }}
                     style={{
@@ -292,7 +284,7 @@ function App() {
             </div>
             )}
 
-            {/* LEGENDARY REVEAL */}
+            {}
             {epicReveal === 'LEGENDARY' && (
                 <div className="legendary-reveal-container">
                     <div className="legendary-sunburst" />
@@ -302,7 +294,7 @@ function App() {
                 </div>
             )}
 
-            {/* MYTHIC REVEAL */}
+            {}
             {epicReveal === 'MYTHIC' && (
                 <div className="mythic-reveal-container">
                     <div className="mythic-void-pulse" />
@@ -313,7 +305,7 @@ function App() {
                 </div>
             )}
 
-            {/* VARIANT REVEAL (small banner) */}
+            {}
             {variantReveal && (
                 <div className={`variant-reveal-banner variant-${variantReveal.variantKey.toLowerCase()}`}>
                     <div className="variant-reveal-icon">{variantReveal.emoji}</div>
@@ -324,7 +316,7 @@ function App() {
                 </div>
             )}
 
-            {/* HUD - Always visible */}
+            {}
             <div className="hud">
                 <div className="hud-left">
                     <div className="stat-pill"><span>HONOR</span><span style={{ color: '#fff' }}>{honor.toLocaleString()} 🔮</span></div>
@@ -343,7 +335,7 @@ function App() {
                 </div>
             </div>
 
-            {/* LEFT MENU - Always visible */}
+            {}
             <div className="side-menu left">
                 <div 
                     className={`menu-btn ${activeTab === 'inventory' ? 'active' : ''}`} 
@@ -391,7 +383,7 @@ function App() {
                 >🪙</div>
             </div>
 
-            {/* INDEX & SETTINGS (BOTTOM LEFT) - Always visible */}
+            {}
             <div 
                 className={`menu-btn ${activeTab === 'index' ? 'active' : ''}`}
                 style={{ position: 'fixed', bottom: '90px', left: '20px', zIndex: 100 }}
@@ -417,7 +409,7 @@ function App() {
                 onMouseLeave={() => setHoveredTab(null)}
             >⚙️</div>
 
-            {/* RIGHT MENU - Always visible */}
+            {}
             <div className="side-menu right">
                 <div 
                     className={`menu-btn ${activeTab === 'customers' ? 'active' : ''}`} 
@@ -462,9 +454,7 @@ function App() {
                 </div>
             </div>
 
-
-
-            {/* SHOP VIEW */}
+            {}
             {mainTab === 'SHOP' && (
                 <div className="roll-interface">
                     <main className="result-display">
@@ -510,7 +500,7 @@ function App() {
                 </div>
             )}
 
-            {/* MODALS */}
+            {}
             {activeTab === 'workers' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -583,7 +573,7 @@ function App() {
                 </div>
             )}
 
-            {/* REBIRTH MODAL */}
+            {}
             {activeTab === 'rebirth' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel rebirth-modal" onClick={e => e.stopPropagation()}>
@@ -656,7 +646,7 @@ function App() {
                 </div>
             )}
 
-            {/* INDEX MODAL */}
+            {}
             {activeTab === 'index' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -671,7 +661,7 @@ function App() {
                             <div className={`tab ${indexSubTab === 'relics' ? 'active' : ''}`} onClick={() => setIndexSubTab('relics')}>RELICS</div>
                         </div>
 
-                        {/* Variant Sub-Tabs (only visible when Workers selected) */}
+                        {}
                         {indexSubTab === 'workers' && (
                             <div className="variant-tabs">
                                 {Object.keys(WORKER_VARIANTS).map(varKey => {
@@ -800,22 +790,22 @@ function App() {
 
                             {indexSubTab === 'relics' && (() => {
                                 const ALL_RELICS = [
-                                    // COMMON
+                                    
                                     { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost' },
                                     { name: 'Coin Charm', desc: '+20% Coin drops', rarity: 'COMMON', effect: 'coin_boost' },
                                     { name: 'Swift Relic', desc: '+10% Gather speed', rarity: 'COMMON', effect: 'gather_speed' },
-                                    // UNCOMMON
+                                    
                                     { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost' },
                                     { name: 'Fortune Stone', desc: '+15% Coin drops', rarity: 'UNCOMMON', effect: 'coin_boost' },
                                     { name: 'Time Shard', desc: '+15s Day duration', rarity: 'UNCOMMON', effect: 'day_extend' },
-                                    // RARE
+                                    
                                     { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost' },
                                     { name: 'Battle Relic', desc: '+5 Bonus damage', rarity: 'RARE', effect: 'damage_boost' },
                                     { name: 'Shield Relic', desc: '+25 Max HP', rarity: 'RARE', effect: 'hp_boost' },
-                                    // EPIC
+                                    
                                     { name: 'Golden Idol', desc: '+50% Coin drops', rarity: 'EPIC', effect: 'coin_boost' },
                                     { name: 'Auto Recruiter', desc: 'Recruit +1 worker on day change', rarity: 'EPIC', effect: 'auto_recruit' },
-                                    // MYTHIC
+                                    
                                     { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll' }
                                 ];
 
@@ -969,7 +959,7 @@ function App() {
                             </div>
                         </div>
 
-                        {/* Global Inventory Tooltip */}
+                        {}
                         {hoveredInvItem && (() => {
                             const item = hoveredInvItem;
                             
@@ -1121,7 +1111,7 @@ function App() {
                 </div>
             )}
 
-            {/* MATERIAL SHOP VIEW */}
+            {}
             {mainTab === 'MAT_SHOP' && (
                 <div className="modal-overlay" style={{ zIndex: 900 }}>
                     <div className="modal-content rbx-panel" style={{ height: '80vh', padding: '0' }}>
@@ -1144,7 +1134,7 @@ function App() {
                 </div>
             )}
 
-            {/* WORLD VIEW */}
+            {}
             {mainTab === 'WORLD' && (
                 <World
                     honor={honor}
@@ -1167,7 +1157,7 @@ function App() {
                 />
             )}
 
-            {/* DOOR TRANSITION */}
+            {}
             {doorTransition && (
                 <div style={{
                     position: 'fixed',
@@ -1195,7 +1185,7 @@ function App() {
                 </div>
             )}
 
-            {/* Global Tab Tooltip */}
+            {}
             {hoveredTab && (
                 <div style={{
                     position: 'fixed',
