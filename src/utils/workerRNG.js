@@ -111,7 +111,7 @@ export const MATERIALS = [
     { id: 'eldritch_eye', name: 'Eldritch Eye', emoji: '👁️', rarity: 'LEGENDARY' },
     { id: 'soul_fragment', name: 'Soul Fragment', emoji: '💜', rarity: 'LEGENDARY' },
     { id: 'oblivion_core', name: 'Oblivion Core', emoji: '⚫', rarity: 'MYTHIC' },
-    
+
     // World exclusive original materials
     { id: 'void_blade_shard', name: 'Void Blade Shard', emoji: '⚔️', rarity: 'LEGENDARY' },
     { id: 'arcane_essence', name: 'Arcane Essence', emoji: '🔮', rarity: 'EPIC' },
@@ -124,6 +124,10 @@ export const MATERIALS = [
     { id: 'cursed_ring_band', name: 'Cursed Ring Band', emoji: '💍', rarity: 'RARE' },
     { id: 'ancient_page', name: 'Ancient Page', emoji: '📖', rarity: 'LEGENDARY' },
     { id: 'world_core', name: 'World Core', emoji: '🌌', rarity: 'MYTHIC' },
+
+    // --- MONSTER DROPS (Common/Uncommon) ---
+    { id: 'void_residue', name: 'Void Residue', emoji: '◼️', rarity: 'COMMON' },
+    { id: 'shadow_shard', name: 'Shadow Shard', emoji: '🌑', rarity: 'UNCOMMON' },
 ];
 
 /**
@@ -184,6 +188,9 @@ export const CRAFTED_ITEMS = [
     { id: 'rope', name: 'Binding Rope', emoji: '🨢', tier: 'BASIC', recipe: { fiber: 5, vine: 2 } },
     { id: 'flask', name: 'Glass Flask', emoji: '⚗️', tier: 'BASIC', recipe: { glass: 3, sand: 2 } },
     { id: 'candle', name: 'Spirit Candle', emoji: '🕯️', tier: 'BASIC', recipe: { wax: 3, oil: 1, ash: 2 } },
+    // NEW MONSTER ITEMS
+    { id: 'void_dagger', name: 'Void Dagger', emoji: '🗡️', tier: 'BASIC', recipe: { void_residue: 5 } },
+    { id: 'shadow_bangle', name: 'Shadow Bangle', emoji: '⭕', tier: 'BASIC', recipe: { shadow_shard: 3, void_residue: 3 } },
 
     // --- INTERMEDIATE (Rare materials) ---
     { id: 'staff', name: 'Soul Staff', emoji: '🪄', tier: 'INTERMEDIATE', recipe: { wood: 5, soul: 1, crystal: 1 } },

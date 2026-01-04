@@ -4,6 +4,7 @@ import { rollWorker, RARITIES, CRAFTED_ITEMS, WORKER_TYPES } from '../utils/work
 export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarities, toggleAutoDelete }) {
     const [showDeleteConfig, setShowDeleteConfig] = useState(false);
     const [hoveredWorker, setHoveredWorker] = useState(null);
+    const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const filteredWorkers = workers;
 
     return (
@@ -153,62 +154,13 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                                 position: 'relative',
                                 cursor: 'pointer'
                             }}
-                            onMouseEnter={() => setHoveredWorker(w.id)}
+                            onMouseEnter={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                                setHoveredWorker(w);
+                            }}
                             onMouseLeave={() => setHoveredWorker(null)}
                         >
-                            {/* Tooltip */}
-                            {hoveredWorker === w.id && (
-                                <div style={{
-                                    position: 'fixed',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    background: '#1a1a1a',
-                                    border: `2px solid ${w.rarity.color}`,
-                                    borderRadius: '8px',
-                                    padding: '16px',
-                                    minWidth: '250px',
-                                    zIndex: 10000,
-                                    boxShadow: `0 0 30px ${w.rarity.color}88`,
-                                    pointerEvents: 'none'
-                                }}>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '900', color: w.rarity.color, marginBottom: '10px' }}>
-                                        {w.name}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#fff', marginBottom: '8px' }}>
-                                        {w.emoji} {w.type} - {w.rarity.name}
-                                    </div>
-                                    {w.variantKey && w.variantKey !== 'NORMAL' && (
-                                        <div style={{ fontSize: '0.7rem', color: w.variant.color, marginBottom: '8px', fontWeight: '900' }}>
-                                            ★ {w.variant.name} Variant
-                                        </div>
-                                    )}
-                                    <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '8px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#10b981', marginBottom: '4px' }}>
-                                            • Gather Chance: {stats.chance}
-                                        </div>
-                                        <div style={{ fontSize: '0.7rem', color: '#3b82f6', marginBottom: '4px' }}>
-                                            • Gather Amount: {stats.amount}
-                                        </div>
-                                        <div style={{ fontSize: '0.7rem', color: '#fbbf24' }}>
-                                            • Roll Chance: {w.chance}
-                                        </div>
-                                    </div>
-                                    {w.passive && (
-                                        <div style={{ 
-                                            fontSize: '0.65rem', 
-                                            color: '#a855f7', 
-                                            marginTop: '8px', 
-                                            borderTop: '1px solid #333',
-                                            paddingTop: '8px',
-                                            fontStyle: 'italic'
-                                        }}>
-                                            {w.passive}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
                             {isEquipped && (
                                 <div className="item-count" style={{
                                     top: '5px', right: '5px', bottom: 'auto',
@@ -229,6 +181,72 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                     </div>
                 )}
             </div>
+
+            {/* Global Worker Tooltip */}
+            {hoveredWorker && (() => {
+                const w = hoveredWorker;
+                const rarityStats = {
+                    COMMON: { chance: '1x', amount: '1x' },
+                    UNCOMMON: { chance: '1.5x', amount: '1x' },
+                    RARE: { chance: '2x', amount: '2x' },
+                    EPIC: { chance: '3x', amount: '3x' },
+                    LEGENDARY: { chance: '5x', amount: '5x' },
+                    MYTHIC: { chance: '10x', amount: '10x' }
+                };
+                const stats = rarityStats[w.rarityKey] || rarityStats.COMMON;
+                
+                return (
+                    <div style={{
+                        position: 'fixed',
+                        top: `${tooltipPos.top}px`,
+                        left: `${tooltipPos.left}px`,
+                        transform: 'translateY(-50%)',
+                        background: '#1a1a1a',
+                        border: `2px solid ${w.rarity.color}`,
+                        borderRadius: '8px',
+                        padding: '16px',
+                        minWidth: '250px',
+                        zIndex: 10000,
+                        boxShadow: `0 0 30px ${w.rarity.color}88`,
+                        pointerEvents: 'none'
+                    }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: w.rarity.color, marginBottom: '10px' }}>
+                            {w.name}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#fff', marginBottom: '8px' }}>
+                            {w.emoji} {w.type} - {w.rarity.name}
+                        </div>
+                        {w.variantKey && w.variantKey !== 'NORMAL' && (
+                            <div style={{ fontSize: '0.7rem', color: w.variant.color, marginBottom: '8px', fontWeight: '900' }}>
+                                ★ {w.variant.name} Variant
+                            </div>
+                        )}
+                        <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '8px' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#10b981', marginBottom: '4px' }}>
+                                • Gather Chance: {stats.chance}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#3b82f6', marginBottom: '4px' }}>
+                                • Gather Amount: {stats.amount}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#fbbf24' }}>
+                                • Roll Chance: {w.chance}
+                            </div>
+                        </div>
+                        {w.passive && (
+                            <div style={{ 
+                                fontSize: '0.65rem', 
+                                color: '#a855f7', 
+                                marginTop: '8px', 
+                                borderTop: '1px solid #333',
+                                paddingTop: '8px',
+                                fontStyle: 'italic'
+                            }}>
+                                {w.passive}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 }

@@ -8,7 +8,8 @@ export function ShopUpgrades({
     gemMultiplier, setGemMultiplier,
     workerSlots, setWorkerSlots, customerSpawnMod, setCustomerSpawnMod,
     maxCustomers, setMaxCustomers, gatherSpeed, setGatherSpeed, startingHonor, setStartingHonor,
-    bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP
+    bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP,
+    coinDropBonus, setCoinDropBonus
 }) {
     // HONOR COSTS
     const LUCK_COST = 500 * Math.pow(2, (permanentLuck - 1) / 0.1);
@@ -18,6 +19,7 @@ export function ShopUpgrades({
     const SPAWN_COST = 10000 * Math.pow(2.5, (customerSpawnMod - 1) / 0.1);
     const DAMAGE_COST = 2000 * Math.pow(1.8, bonusDamage / 5);
     const HP_COST = 1500 * Math.pow(1.6, bonusMaxHP / 25);
+    const COIN_BONUS_COST = 5000 * Math.pow(2, (coinDropBonus - 1) / 0.5);
 
     const buyLuck = () => {
         if (honor >= LUCK_COST) {
@@ -65,6 +67,13 @@ export function ShopUpgrades({
         if (honor >= HP_COST) {
             setHonor(prev => prev - Math.floor(HP_COST));
             setBonusMaxHP(prev => prev + 25);
+        }
+    };
+
+    const buyCoinBonus = () => {
+        if (honor >= COIN_BONUS_COST) {
+            setHonor(prev => prev - Math.floor(COIN_BONUS_COST));
+            setCoinDropBonus(prev => prev + 0.5);
         }
     };
 
@@ -125,6 +134,17 @@ export function ShopUpgrades({
                 <ShopItem title="LUCK UPGRADE" icon="🍀" desc="Permanent recruit luck boost." value={`${permanentLuck.toFixed(2)}x`} cost={LUCK_COST} currency="HONOR" onBuy={buyLuck} afford={honor >= LUCK_COST} />
                 <ShopItem title="DAY DURATION" icon="☀️" desc="+30s Day duration." value={`${dayDuration}s`} cost={DAY_COST} currency="HONOR" onBuy={buyDay} afford={honor >= DAY_COST} />
                 <ShopItem title="NIGHT DURATION" icon="🌙" desc="+30s Night duration." value={`${nightDuration}s`} cost={NIGHT_COST} currency="HONOR" onBuy={buyNight} afford={honor >= NIGHT_COST} />
+
+                <ShopItem
+                    title="DROP MORE COINS"
+                    icon="🪙"
+                    desc="+50% Coin drops from monsters."
+                    value={`${coinDropBonus.toFixed(1)}x`}
+                    cost={COIN_BONUS_COST}
+                    currency="HONOR"
+                    onBuy={buyCoinBonus}
+                    afford={honor >= COIN_BONUS_COST}
+                />
 
                 {/* Level Locked Upgrades */}
                 <ShopItem

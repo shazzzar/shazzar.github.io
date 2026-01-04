@@ -97,13 +97,27 @@
 }
 
 @keyframes enemy-pulse {
-    0%, 100% { background: #5a1a1a; }
-    50% { background: #7a2a2a; }
+
+    0%,
+    100% {
+        background: #5a1a1a;
+    }
+
+    50% {
+        background: #7a2a2a;
+    }
 }
 
 @keyframes chest-glow {
-    0%, 100% { background: #5a4a1a; }
-    50% { background: #7a6a3a; }
+
+    0%,
+    100% {
+        background: #5a4a1a;
+    }
+
+    50% {
+        background: #7a6a3a;
+    }
 }
 
 /* COMBAT */
@@ -138,7 +152,7 @@
 .enemy-sprite {
     font-size: 8rem;
     animation: enemyFloat 2s ease-in-out infinite;
-    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.5));
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
 }
 
 .player-section {
@@ -150,7 +164,7 @@
 
 .player-sprite {
     font-size: 8rem;
-    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.5));
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.5));
 }
 
 .combat-name-plate {
@@ -173,7 +187,8 @@
     max-width: 600px;
     width: 100%;
     color: #fff;
-    display: none; /* Hide old combat style */
+    display: none;
+    /* Hide old combat style */
 }
 
 .battle-ui {
@@ -339,23 +354,51 @@
 }
 
 @keyframes playerBounce {
-    0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
-    50% { transform: translate(-50%, -50%) translateY(-5px); }
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) translateY(0px);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) translateY(-5px);
+    }
 }
 
 @keyframes enemyFloat {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-15px); }
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
 }
 
 @keyframes attackFlash {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(2); }
+
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(2);
+    }
 }
 
 @keyframes damageFloat {
-    0% { opacity: 1; transform: translate(-50%, -80%) translateY(0); }
-    100% { opacity: 0; transform: translate(-50%, -80%) translateY(-25px); }
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -80%) translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -80%) translateY(-25px);
+    }
 }
 
 @keyframes flyToInventory {
@@ -363,10 +406,12 @@
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
     }
+
     20% {
         transform: translate(-50%, -50%) scale(1.4);
         opacity: 1;
     }
+
     100% {
         transform: translate(calc(-50vw + 100px), -50%) scale(0.35);
         opacity: 0;
@@ -375,13 +420,21 @@
 
 .entity-sprite {
     transition: all 0.3s;
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes attackPulse {
-    0% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.15); }
-    100% { transform: translate(-50%, -50%) scale(1); }
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.15);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .attack-anim {
@@ -391,12 +444,45 @@
 .damage-number {
     animation: damageFloat 0.7s ease-out forwards;
     pointer-events: none;
-    text-shadow: 0 0 8px rgba(0,0,0,0.6);
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
 .world-pixel-bg {
     background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px),
-        repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px);
+        repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0, 0, 0, 0.1) 8px, rgba(0, 0, 0, 0.1) 9px),
+        repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0, 0, 0, 0.1) 8px, rgba(0, 0, 0, 0.1) 9px);
     background-size: 8px 8px;
+}
+
+/* DROPPED ITEMS */
+@keyframes itemBob {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) translateY(0px);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) translateY(-8px);
+    }
+}
+
+.dropped-item {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropped-item:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
 }

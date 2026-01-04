@@ -12,26 +12,29 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
             )}
             {customers.map(cust => {
                 const canSell = (inventory.crafted[cust.request.id] || 0) > 0;
+                const isShady = cust.isShady || false;
 
                 return (
                     <div key={cust.id} className="inv-item" style={{
                         opacity: canSell ? 1 : 0.6,
-                        border: canSell ? '1px solid #3b82f6' : '1px solid #333',
-                        background: canSell ? 'rgba(59, 130, 246, 0.05)' : '#252525'
+                        border: isShady 
+                            ? (canSell ? '2px solid #a855f7' : '2px solid #6b21a8')
+                            : (canSell ? '1px solid #3b82f6' : '1px solid #333'),
+                        background: isShady
+                            ? (canSell ? 'rgba(168, 85, 247, 0.15)' : 'rgba(107, 33, 168, 0.1)')
+                            : (canSell ? 'rgba(59, 130, 246, 0.05)' : '#252525'),
+                        boxShadow: isShady ? '0 0 20px rgba(168, 85, 247, 0.3)' : 'none'
                     }}>
-                        <div className="item-tooltip">
-                            <span className="tooltip-title">{cust.name}</span>
-                            <span className="tooltip-rarity" style={{ color: '#fbbf24' }}>CLIENT REASON: PURCHASE</span>
-                            <div className="tooltip-desc">
-                                This client is looking for a {cust.request.name}. <br /><br />
-                                <strong>REWARD:</strong> <span style={{ color: '#fff' }}>{cust.reward.toLocaleString()} 🔮</span>
-                            </div>
-                        </div>
-
-                        <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>👤</div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#fff', marginBottom: '2px' }}>{cust.name}</div>
+                        <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>{isShady ? '🕵️' : '👤'}</div>
+                        <div style={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: '900', 
+                            color: isShady ? '#a855f7' : '#fff', 
+                            marginBottom: '2px',
+                            textShadow: isShady ? '0 0 10px rgba(168, 85, 247, 0.5)' : 'none'
+                        }}>{cust.name}</div>
                         <div style={{ fontSize: '0.6rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Wants:</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: isShady ? '#a855f7' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
                             {cust.request.emoji} {cust.request.name}
                         </div>
 
@@ -44,7 +47,7 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
                                 width: '100%',
                                 padding: '8px',
                                 fontSize: '0.7rem',
-                                background: canSell ? '#3b82f6' : '#444',
+                                background: canSell ? (isShady ? '#a855f7' : '#3b82f6') : '#444',
                                 cursor: canSell ? 'pointer' : 'not-allowed'
                             }}
                         >

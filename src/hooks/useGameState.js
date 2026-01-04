@@ -10,7 +10,7 @@ const BASE_PHASE_DURATION = 120; // 2 minutes base
 const GATHER_INTERVAL = 3000;
 const CUSTOMER_INTERVAL = 8000; // New customer every 8 seconds base
 
-export function useGameState() {
+export function useGameState(gameStarted = true) {
     const [honor, setHonor] = useState(0);
     const [phase, setPhase] = useState(UI_PHASES.DAY);
     const [timeLeft, setTimeLeft] = useState(BASE_PHASE_DURATION);
@@ -36,16 +36,38 @@ export function useGameState() {
     });
 
     const [customers, setCustomers] = useState([]);
+    const [shadyClientSpawned, setShadyClientSpawned] = useState(false);
 
-    // DISCOVERY TRACKING - persists even when deleted
+    // DISCOVERY TRACKING - persists even when deleted (MUST BE BEFORE addItemToInventory)
     const [discoveredMaterials, setDiscoveredMaterials] = useState(new Set());
     const [discoveredCrafted, setDiscoveredCrafted] = useState(new Set());
     const [discoveredWorkers, setDiscoveredWorkers] = useState(new Set()); // Format: "rarityKey-type-variantKey"
+
+    // ROBUST INVENTORY ADD FUNCTION
+    const addItemToInventory = useCallback((itemId, quantity = 1) => {
+        console.log(`[INVENTORY] Adding ${quantity}x ${itemId}`);
+        setInventory(prev => {
+            const currentCount = prev[itemId] || 0;
+            const newCount = currentCount + quantity;
+            console.log(`[INVENTORY] ${itemId}: ${currentCount} -> ${newCount}`);
+            return {
+                ...prev,
+                [itemId]: newCount
+            };
+        });
+        // Also mark as discovered
+        setDiscoveredMaterials(prev => {
+            const next = new Set(prev);
+            next.add(itemId);
+            return next;
+        });
+    }, []);
 
     const [permanentLuck, setPermanentLuck] = useState(1.0);
     const [autoDeleteRarities, setAutoDeleteRarities] = useState([]);
     const [masterVolume, setMasterVolume] = useState(0.5);
     const [rebirthCount, setRebirthCount] = useState(0);
+    const [showTutorial, setShowTutorial] = useState(true);
 
     // GEM & SHOP SYSTEM
     const [gems, setGems] = useState(0);
@@ -69,6 +91,19 @@ export function useGameState() {
     const [bonusDamage, setBonusDamage] = useState(0); // flat bonus damage
     const [bonusMaxHP, setBonusMaxHP] = useState(0); // flat bonus max HP
 
+    // COIN SYSTEM
+    const [coins, setCoins] = useState(0);
+    const [coinDropBonus, setCoinDropBonus] = useState(1.0); // multiplier for coin drops
+    const [materialPurchases, setMaterialPurchases] = useState({}); // { materialId: purchaseCount }
+
+    // Add coins helper
+    const addCoins = useCallback((amount) => {
+        const finalAmount = Math.floor(amount * coinDropBonus);
+        console.log(`[COINS] Adding ${finalAmount} coins (base: ${amount}, bonus: ${coinDropBonus}x)`);
+        setCoins(prev => prev + finalAmount);
+        return finalAmount;
+    }, [coinDropBonus]);
+
     const toggleAutoDelete = useCallback((rarityKey) => {
         setAutoDeleteRarities(prev => {
             const isAddingToAutoDelete = !prev.includes(rarityKey);
@@ -88,6 +123,8 @@ export function useGameState() {
     }, [equippedWorkers]);
 
     useEffect(() => {
+        if (!gameStarted) return; // Don't start timer until game starts
+        
         let timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
@@ -103,6 +140,12 @@ export function useGameState() {
                         setCustomers([]);
                     }
 
+                    // Clear customers when transitioning to DAY
+                    if (nextPhase === UI_PHASES.DAY) {
+                        setCustomers([]);
+                        setShadyClientSpawned(false);
+                    }
+
                     // Decrement world cooldown on new day
                     if (nextPhase === UI_PHASES.DAY && worldCooldown > 0) {
                         setWorldCooldown(prev => Math.max(0, prev - 1));
@@ -116,7 +159,7 @@ export function useGameState() {
             });
         }, 1000);
         return () => clearInterval(timer);
-    }, [phase, dayDuration, nightDuration, customers]);
+    }, [gameStarted, phase, dayDuration, nightDuration, customers]);
 
     const performRecruitRoll = useCallback(() => {
         if (isRolling) return;
@@ -124,7 +167,7 @@ export function useGameState() {
         const rollTime = fastRoll ? 160 : 800; // 800ms is half of sound (1608ms), fast is 5x faster
         setTimeout(() => {
             let currentLuck = luckBoost ? permanentLuck : 1.0;
-            
+
             // Apply luck boost relic
             const luckRelic = relics.find(r => r.effect === 'luck_boost');
             if (luckRelic) {
@@ -161,10 +204,6 @@ export function useGameState() {
             setIsRolling(false);
         }, rollTime);
     }, [isRolling, fastRoll, luckBoost, permanentLuck, autoDeleteRarities, relics]);
-
-    useEffect(() => {
-        if (autoRoll && !isRolling) performRecruitRoll();
-    }, [autoRoll, isRolling, performRecruitRoll]);
 
     const equipBest = useCallback(() => {
         const types = ['Gatherer', 'Salesman', 'Researcher', 'Smith', 'Oracle', 'Mechanic', 'Chef', 'Guard'];
@@ -248,7 +287,24 @@ export function useGameState() {
             }
         }, GATHER_INTERVAL / gatherSpeed);
         return () => clearInterval(gatherInterval);
+        return () => clearInterval(gatherInterval);
     }, [equippedWorkers, phase, gatherSpeed, relics]);
+
+    // AUTO-DISCOVER MATERIALS FROM INVENTORY
+    // This ensures that materials gained from sources other than gathering (like World drops) are discovered
+    useEffect(() => {
+        setDiscoveredMaterials(prev => {
+            const next = new Set(prev);
+            let changed = false;
+            Object.keys(inventory).forEach(k => {
+                if (k !== 'crafted' && inventory[k] > 0 && !next.has(k)) {
+                    next.add(k);
+                    changed = true;
+                }
+            });
+            return changed ? next : prev;
+        });
+    }, [inventory]);
 
     // CUSTOMER SYSTEM
     useEffect(() => {
@@ -266,10 +322,10 @@ export function useGameState() {
             // Chance to spawn depends on salesman power and mod
             if (Math.random() < (0.3 + (salesmanPower * 0.05)) * customerSpawnMod) {
                 // Filter items based on day count - only BASIC tier items during first 5 days
-                const availableItems = dayCount <= 5 
+                const availableItems = dayCount <= 5
                     ? CRAFTED_ITEMS.filter(item => item.tier === 'BASIC')
                     : CRAFTED_ITEMS;
-                
+
                 const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
                 const tierMultipliers = { BASIC: 1, INTERMEDIATE: 5, ADVANCED: 25, LEGENDARY: 500, MYTHIC: 10000 };
                 const tierMult = tierMultipliers[randomItem.tier] || 1;
@@ -281,13 +337,45 @@ export function useGameState() {
                     id: Date.now(),
                     name: names[Math.floor(Math.random() * names.length)] + " #" + (Math.floor(Math.random() * 900) + 100),
                     request: randomItem,
-                    reward: Math.floor(reward * (1 + salesmanPower * 0.1))
+                    reward: Math.floor(reward * (1 + salesmanPower * 0.1)),
+                    isShady: false
                 };
                 setCustomers(prev => [...prev, newCust]);
             }
         }, CUSTOMER_INTERVAL);
         return () => clearInterval(custTimer);
     }, [customers, equippedWorkers.Salesman, phase, dayCount]);
+
+    // SHADY CLIENT SYSTEM (NIGHT ONLY)
+    useEffect(() => {
+        if (phase !== UI_PHASES.NIGHT || shadyClientSpawned) return;
+
+        // 50% chance to spawn 1 shady client per night
+        if (Math.random() < 0.5) {
+            // Only hard items: ADVANCED, LEGENDARY, or MYTHIC tier
+            const hardItems = CRAFTED_ITEMS.filter(item => 
+                item.tier === 'ADVANCED' || item.tier === 'LEGENDARY' || item.tier === 'MYTHIC'
+            );
+
+            if (hardItems.length > 0) {
+                const randomItem = hardItems[Math.floor(Math.random() * hardItems.length)];
+                const tierMultipliers = { ADVANCED: 25, LEGENDARY: 500, MYTHIC: 10000 };
+                const tierMult = tierMultipliers[randomItem.tier] || 1;
+                const baseReward = 50 + (Object.values(randomItem.recipe).reduce((a, b) => a + b, 0) * 20);
+                const reward = baseReward * tierMult * 2; // Double reward for shady clients
+
+                const shadyClient = {
+                    id: Date.now(),
+                    name: "🌙 Shady Client #" + (Math.floor(Math.random() * 900) + 100),
+                    request: randomItem,
+                    reward: Math.floor(reward),
+                    isShady: true
+                };
+                setCustomers(prev => [...prev, shadyClient]);
+                setShadyClientSpawned(true);
+            }
+        }
+    }, [phase, shadyClientSpawned]);
 
     const sellToCustomer = useCallback((custId) => {
         const cust = customers.find(c => c.id === custId);
@@ -398,7 +486,7 @@ export function useGameState() {
     return {
         honor, setHonor, phase, timeLeft, dayCount, lastRecruit, isRolling, performRecruitRoll,
         autoRoll, setAutoRoll, fastRoll, setFastRoll, luckBoost, setLuckBoost,
-        inventory, workers, setWorkers, equippedWorkers, equipBest, craftItem,
+        inventory, setInventory, addItemToInventory, workers, setWorkers, equippedWorkers, equipBest, craftItem,
         permanentLuck, setPermanentLuck,
         customers, sellToCustomer, gatherEvents,
         autoDeleteRarities, toggleAutoDelete,
@@ -411,6 +499,8 @@ export function useGameState() {
         discoveredMaterials, discoveredCrafted, discoveredWorkers,
         maxCustomers, setMaxCustomers, gatherSpeed, setGatherSpeed, startingHonor, setStartingHonor,
         relics, setRelics, worldCooldown, setWorldCooldown,
-        bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP
+        bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP,
+        coins, setCoins, addCoins, coinDropBonus, setCoinDropBonus, materialPurchases, setMaterialPurchases,
+        showTutorial, setShowTutorial
     };
 }

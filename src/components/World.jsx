@@ -1,33 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { MATERIALS } from '../utils/workerRNG';
 import '../World.css';
-
-// World-exclusive materials (added to main inventory)
-const WORLD_MATERIALS = [
-    // Original 10 materials
-    { id: 'void_blade_shard', name: 'Void Blade Shard', emoji: '⚔️', rarity: 'LEGENDARY' },
-    { id: 'arcane_essence', name: 'Arcane Essence', emoji: '🔮', rarity: 'EPIC' },
-    { id: 'beast_fang', name: 'Beast Fang', emoji: '🦷', rarity: 'RARE' },
-    { id: 'holy_water', name: 'Holy Water', emoji: '💧', rarity: 'RARE' },
-    { id: 'demon_heart', name: 'Demon Heart', emoji: '❤️', rarity: 'EPIC' },
-    { id: 'crystal_armor_piece', name: 'Crystal Armor Piece', emoji: '🛡️', rarity: 'LEGENDARY' },
-    { id: 'shadow_fabric', name: 'Shadow Fabric', emoji: '🌑', rarity: 'EPIC' },
-    { id: 'phoenix_feather', name: 'Phoenix Feather', emoji: '🪶', rarity: 'MYTHIC' },
-    { id: 'cursed_ring_band', name: 'Cursed Ring Band', emoji: '💍', rarity: 'RARE' },
-    { id: 'ancient_page', name: 'Ancient Page', emoji: '📖', rarity: 'LEGENDARY' },
-    // NEW 10 materials - Monster Drops Only
-    { id: 'nightmare_shard', name: 'Nightmare Shard', emoji: '💎', rarity: 'RARE' },
-    { id: 'ectoplasm', name: 'Ectoplasm', emoji: '🫧', rarity: 'RARE' },
-    { id: 'corrupted_bone', name: 'Corrupted Bone', emoji: '🦴', rarity: 'RARE' },
-    { id: 'spectral_dust', name: 'Spectral Dust', emoji: '✨', rarity: 'EPIC' },
-    { id: 'abyssal_ink', name: 'Abyssal Ink', emoji: '🖤', rarity: 'EPIC' },
-    { id: 'wraith_cloth', name: 'Wraith Cloth', emoji: '👻', rarity: 'EPIC' },
-    { id: 'doom_crystal', name: 'Doom Crystal', emoji: '💠', rarity: 'LEGENDARY' },
-    { id: 'eldritch_eye', name: 'Eldritch Eye', emoji: '👁️', rarity: 'LEGENDARY' },
-    { id: 'soul_fragment', name: 'Soul Fragment', emoji: '💜', rarity: 'LEGENDARY' },
-    { id: 'oblivion_core', name: 'Oblivion Core', emoji: '⚫', rarity: 'MYTHIC' }
-];
-
-const UNIQUE_WORLD_ITEM = { id: 'world_core', name: 'World Core', emoji: '🌌', rarity: 'MYTHIC' };
 
 export function World({
     honor,
@@ -39,8 +12,13 @@ export function World({
     dayCount,
     inventory,
     setInventory,
+    addCoins,
     bonusDamage = 0,
-    bonusMaxHP = 0
+    bonusMaxHP = 0,
+    coinDropAudio,
+    fireballAudio,
+    smallMonsterAttackAudio,
+    largeMonsterAttackAudio
 }) {
     const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 });
     const playerPosRef = useRef({ x: 0, y: 0 });
@@ -50,6 +28,7 @@ export function World({
     const entitiesRef = useRef([]);
     const [inCombat, setInCombat] = useState(false);
     const [currentEnemy, setCurrentEnemy] = useState(null);
+    const [nearHouse, setNearHouse] = useState(false);
     const [engagedMonsterId, setEngagedMonsterId] = useState(null);
     const [engagedMonsterPos, setEngagedMonsterPos] = useState(null);
     const engagedMonsterPosRef = useRef(null);
@@ -61,11 +40,13 @@ export function World({
     const [enemyAttacking, setEnemyAttacking] = useState(false);
     const [damageNumbers, setDamageNumbers] = useState([]);
     const combatActiveRef = useRef(false);
+    const [showReturnButton, setShowReturnButton] = useState(false);
 
     const PLAYER_RADIUS = 32;
-    const TREE_RADIUS = 40;
-    const ROCK_RADIUS = 40;
+    const TREE_RADIUS = 15;
+    const ROCK_RADIUS = 12;
     const MONSTER_RADIUS = 44;
+    const ITEM_RADIUS = 30; // Pickup radius for dropped items
 
     const MOVE_SPEED = 5; // pixels per frame
 
@@ -79,20 +60,36 @@ export function World({
         generateWorld();
     }, []);
 
+    // Show return button after 10 seconds
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowReturnButton(true);
+        }, 10000);
+        return () => clearTimeout(timer);
+    }, []);
+
     const generateWorld = () => {
         const newEntities = [];
-        const numTrees = 500;
-        const numRocks = 300;
-        const numMonsters = 100;
-        const worldRadius = 5000;
+        const numTrees = 1500;
+        const numRocks = 1000;
+        const numMonsters = 800;
+        const worldRadius = 8000;
+        const spawnClearRadius = 400; // Clear area around spawn
         const nearSpawnMonsters = 8;
 
         for (let i = 0; i < numTrees; i++) {
+            let x, y, distFromSpawn;
+            do {
+                x = (Math.random() - 0.5) * worldRadius * 2;
+                y = (Math.random() - 0.5) * worldRadius * 2;
+                distFromSpawn = Math.sqrt(x * x + y * y);
+            } while (distFromSpawn < spawnClearRadius); // Keep trying until outside spawn area
+            
             newEntities.push({
                 id: `tree-${i}`,
                 type: 'tree',
-                x: (Math.random() - 0.5) * worldRadius * 2,
-                y: (Math.random() - 0.5) * worldRadius * 2,
+                x: x,
+                y: y,
                 emoji: '🌲',
                 collision: true,
                 radius: TREE_RADIUS
@@ -100,11 +97,18 @@ export function World({
         }
 
         for (let i = 0; i < numRocks; i++) {
+            let x, y, distFromSpawn;
+            do {
+                x = (Math.random() - 0.5) * worldRadius * 2;
+                y = (Math.random() - 0.5) * worldRadius * 2;
+                distFromSpawn = Math.sqrt(x * x + y * y);
+            } while (distFromSpawn < spawnClearRadius);
+            
             newEntities.push({
                 id: `rock-${i}`,
                 type: 'rock',
-                x: (Math.random() - 0.5) * worldRadius * 2,
-                y: (Math.random() - 0.5) * worldRadius * 2,
+                x: x,
+                y: y,
                 emoji: '🪨',
                 collision: true,
                 radius: ROCK_RADIUS
@@ -112,17 +116,24 @@ export function World({
         }
 
         for (let i = 0; i < numMonsters; i++) {
-            const startX = (Math.random() - 0.5) * worldRadius * 2;
-            const startY = (Math.random() - 0.5) * worldRadius * 2;
+            let startX, startY, distFromSpawn;
+            do {
+                startX = (Math.random() - 0.5) * worldRadius * 2;
+                startY = (Math.random() - 0.5) * worldRadius * 2;
+                distFromSpawn = Math.sqrt(startX * startX + startY * startY);
+            } while (distFromSpawn < spawnClearRadius);
+            
+            const isBoss = Math.random() < 0.05; // 5% chance for boss
             newEntities.push({
                 id: `monster-${i}`,
                 type: 'monster',
-                enemyType: 'VOID',
+                enemyType: isBoss ? 'BOSS' : 'VOID',
+                isBoss: isBoss,
                 x: startX,
                 y: startY,
-                emoji: '👾',
+                emoji: isBoss ? '👹' : '👾',
                 collision: true,
-                radius: MONSTER_RADIUS,
+                radius: isBoss ? MONSTER_RADIUS * 1.5 : MONSTER_RADIUS,
                 pathIndex: 0,
                 pathDirection: Math.random() > 0.5 ? 1 : -1,
                 path: [
@@ -134,10 +145,10 @@ export function World({
             });
         }
 
-        // Ensure some monsters are near spawn so encounters happen quickly
+        // Ensure some monsters are near spawn so encounters happen quickly (but not TOO close)
         for (let i = 0; i < nearSpawnMonsters; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const dist = 120 + Math.random() * 200;
+            const dist = spawnClearRadius + 50 + Math.random() * 200; // Just outside clear radius
             const startX = Math.cos(angle) * dist;
             const startY = Math.sin(angle) * dist;
             newEntities.push({
@@ -160,6 +171,18 @@ export function World({
             });
         }
 
+        // Add house at spawn (200px away, which is about 2 tiles)
+        newEntities.push({
+            id: 'spawn-house',
+            type: 'house',
+            x: 0,
+            y: -200,
+            emoji: '🏠',
+            collision: true,
+            radius: 100,
+            isDoor: true
+        });
+
         setEntities(newEntities);
         entitiesRef.current = newEntities;
     };
@@ -177,17 +200,32 @@ export function World({
         engagedMonsterPosRef.current = engagedMonsterPos;
     }, [engagedMonsterPos]);
 
-    const isBlocking = (entity) => entity.type === 'tree' || entity.type === 'rock' || entity.type === 'monster';
+    const isBlocking = (entity) => entity.type === 'tree' || entity.type === 'rock' || entity.type === 'monster' || entity.type === 'house';
 
     const checkCollision = (newX, newY) => {
         const currentEntities = entitiesRef.current;
         for (const entity of currentEntities) {
             if (!entity.collision || !isBlocking(entity)) continue;
-            const radius = entity.radius || TREE_RADIUS;
-            const dx = newX - entity.x;
-            const dy = newY - entity.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < radius + PLAYER_RADIUS) return true;
+            
+            // Use rectangular collision for trees
+            if (entity.type === 'tree') {
+                const treeWidth = 30;  // Tree trunk width
+                const treeHeight = 60; // Tree height
+                const playerSize = PLAYER_RADIUS;
+                
+                // Check if player rectangle overlaps with tree rectangle
+                if (Math.abs(newX - entity.x) < (treeWidth + playerSize) / 2 &&
+                    Math.abs(newY - entity.y) < (treeHeight + playerSize) / 2) {
+                    return true;
+                }
+            } else {
+                // Use circular collision for rocks and monsters
+                const radius = entity.radius || TREE_RADIUS;
+                const dx = newX - entity.x;
+                const dy = newY - entity.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < radius + PLAYER_RADIUS) return true;
+            }
         }
         return false;
     };
@@ -203,6 +241,20 @@ export function World({
             if (distance < radius + PLAYER_RADIUS) return entity;
         }
         return null;
+    };
+
+    const checkHouseDoor = (x, y) => {
+        const currentEntities = entitiesRef.current;
+        for (const entity of currentEntities) {
+            if (entity.type !== 'house' || !entity.isDoor) continue;
+            const dx = x - entity.x;
+            const dy = y - entity.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < entity.radius + PLAYER_RADIUS) {
+                return true;
+            }
+        }
+        return false;
     };
 
     useEffect(() => {
@@ -237,6 +289,22 @@ export function World({
         return () => clearInterval(monsterInterval);
     }, [inCombat]);
 
+    // E key listener for entering house
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'e' || e.key === 'E') {
+                if (nearHouse && !inCombat) {
+                    // Trigger shop switch with background color
+                    window.dispatchEvent(new CustomEvent('switchToShop', {
+                        detail: { bgColor: '#1a1a1a' }
+                    }));
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [nearHouse, inCombat]);
+
     useEffect(() => {
         if (inCombat) return;
         const interval = setInterval(() => {
@@ -268,7 +336,7 @@ export function World({
                     setIsMoving(false);
                     const monster = checkMonsterEncounter(prev.x, prev.y);
                     if (monster) {
-                        const isBoss = Math.random() < 0.005;
+                        const isBoss = monster.isBoss || false;
                         const adjusted = placeInFrontOfMonster(prev.x, prev.y, monster);
                         setPlayerDirection(getFacingFromVector(monster.x - prev.x, monster.y - prev.y));
                         startCombat(isBoss, monster.id, { x: monster.x, y: monster.y });
@@ -278,9 +346,14 @@ export function World({
                 }
                 const newX = prev.x + dx;
                 const newY = prev.y + dy;
+                
+                // Check if player is near house door
+                const isNearHouseDoor = checkHouseDoor(newX, newY);
+                setNearHouse(isNearHouseDoor);
+                
                 const monster = checkMonsterEncounter(newX, newY);
                 if (monster) {
-                    const isBoss = Math.random() < 0.005;
+                    const isBoss = monster.isBoss || false;
                     const adjusted = placeInFrontOfMonster(newX, newY, monster);
                     setPlayerDirection(getFacingFromVector(monster.x - newX, monster.y - newY));
                     startCombat(isBoss, monster.id, { x: monster.x, y: monster.y });
@@ -314,10 +387,60 @@ export function World({
         };
     }, []);
 
-    const startCombat = (isBoss, monsterId, monsterPos) => {
+    const dropRelic = () => {
+        const relicPool = [
+            // COMMON (40%)
+            { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost', value: 0.1 },
+            { name: 'Coin Charm', desc: '+20% Coin drops', rarity: 'COMMON', effect: 'coin_boost', value: 0.2 },
+            { name: 'Swift Relic', desc: '+10% Gather speed', rarity: 'COMMON', effect: 'gather_speed', value: 0.1 },
+            // UNCOMMON (30%)
+            { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost', value: 0.05 },
+            { name: 'Fortune Stone', desc: '+15% Coin drops', rarity: 'UNCOMMON', effect: 'coin_boost', value: 0.15 },
+            { name: 'Time Shard', desc: '+15s Day duration', rarity: 'UNCOMMON', effect: 'day_extend', value: 15 },
+            // RARE (20%)
+            { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost', value: 0.03 },
+            { name: 'Battle Relic', desc: '+5 Bonus damage', rarity: 'RARE', effect: 'damage_boost', value: 5 },
+            { name: 'Shield Relic', desc: '+25 Max HP', rarity: 'RARE', effect: 'hp_boost', value: 25 },
+            // EPIC (9%)
+            { name: 'Golden Idol', desc: '+50% Coin drops', rarity: 'EPIC', effect: 'coin_boost', value: 0.5 },
+            { name: 'Auto Recruiter', desc: 'Recruit +1 worker on day change', rarity: 'EPIC', effect: 'auto_recruit', value: 1 },
+            // MYTHIC (1%)
+            { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll', value: 1 }
+        ];
+        
+        let relic;
+        const rand = Math.random();
+        if (rand < 0.01) {
+            // Mythic - 1%
+            relic = relicPool[11];
+        } else if (rand < 0.10) {
+            // Epic - 9%
+            relic = relicPool[9 + Math.floor(Math.random() * 2)];
+        } else if (rand < 0.30) {
+            // Rare - 20%
+            relic = relicPool[6 + Math.floor(Math.random() * 3)];
+        } else if (rand < 0.60) {
+            // Uncommon - 30%
+            relic = relicPool[3 + Math.floor(Math.random() * 3)];
+        } else {
+            // Common - 40%
+            relic = relicPool[Math.floor(Math.random() * 3)];
+        }
+        
+        setRelics(prev => [...prev, { ...relic, id: Date.now() }]);
+        // Show relic as item drop animation instead of blocking alert
+        setItemDrop({
+            id: Date.now(),
+            emoji: '🏆',
+            name: relic.name,
+            rarity: relic.rarity
+        });
+    };
+
+    const startCombat = (isBossEntity, monsterId, monsterPos) => {
         if (inCombat || combatActiveRef.current) return;
         combatActiveRef.current = true;
-        const enemy = isBoss ? generateBoss() : generateEnemy();
+        const enemy = isBossEntity ? generateBoss() : generateEnemy();
         setCurrentEnemy({ ...enemy, monsterId });
         setEngagedMonsterId(monsterId);
         setEngagedMonsterPos(monsterPos || null);
@@ -334,16 +457,31 @@ export function World({
             setInCombat(false);
             return;
         }
-        
+
         let enemyHP = enemyState.hp || 30;
         let playerHPTemp = playerHP;
         let battleEnded = false;
+        let timeoutIds = []; // Track all timeouts
+
+        const clearAllTimeouts = () => {
+            timeoutIds.forEach(id => clearTimeout(id));
+            timeoutIds = [];
+        };
 
         const heroStrike = () => {
-            if (battleEnded) return;
+            if (battleEnded || !combatActiveRef.current) return;
             try {
                 setHeroAttacking(true);
-                setTimeout(() => setHeroAttacking(false), 180);
+                const attackTimeout = setTimeout(() => setHeroAttacking(false), 180);
+                timeoutIds.push(attackTimeout);
+                
+                // Play fireball sound only if battle is still active
+                if (!battleEnded && combatActiveRef.current && fireballAudio?.current) {
+                    fireballAudio.current.currentTime = 0;
+                    fireballAudio.current.volume = 0.5;
+                    fireballAudio.current.play().catch(e => console.log("Audio play blocked"));
+                }
+                
                 const damage = playerAutoAttack();
                 enemyHP = Math.max(0, enemyHP - damage);
                 setCurrentEnemy(prev => prev ? { ...prev, hp: enemyHP } : null);
@@ -355,10 +493,25 @@ export function World({
         };
 
         const enemyStrike = () => {
-            if (battleEnded) return;
+            if (battleEnded || !combatActiveRef.current) return;
             try {
                 setEnemyAttacking(true);
-                setTimeout(() => setEnemyAttacking(false), 180);
+                const attackTimeout = setTimeout(() => setEnemyAttacking(false), 180);
+                timeoutIds.push(attackTimeout);
+                
+                // Play monster attack sound based on boss status only if battle is still active
+                if (!battleEnded && combatActiveRef.current) {
+                    if (enemyState.isBoss && largeMonsterAttackAudio?.current) {
+                        largeMonsterAttackAudio.current.currentTime = 0;
+                        largeMonsterAttackAudio.current.volume = 0.5;
+                        largeMonsterAttackAudio.current.play().catch(e => console.log("Audio play blocked"));
+                    } else if (!enemyState.isBoss && smallMonsterAttackAudio?.current) {
+                        smallMonsterAttackAudio.current.currentTime = 0;
+                        smallMonsterAttackAudio.current.volume = 0.5;
+                        smallMonsterAttackAudio.current.play().catch(e => console.log("Audio play blocked"));
+                    }
+                }
+                
                 const damage = enemyAutoAttack(enemyState);
                 playerHPTemp = Math.max(0, playerHPTemp - damage);
                 setPlayerHP(playerHPTemp);
@@ -370,31 +523,41 @@ export function World({
         };
 
         const loop = () => {
-            if (battleEnded) return;
-            
+            if (battleEnded || !combatActiveRef.current) return;
+
             try {
                 heroStrike();
                 if (enemyHP <= 0) {
                     battleEnded = true;
+                    clearAllTimeouts();
                     finishVictory(enemyState.isBoss || false, monsterId);
                     return;
                 }
-                
-                setTimeout(() => {
-                    if (battleEnded) return;
-                    
+
+                const enemyTurnTimeout = setTimeout(() => {
+                    if (battleEnded || !combatActiveRef.current) return;
+
                     enemyStrike();
                     if (playerHPTemp <= 0) {
                         battleEnded = true;
+                        clearAllTimeouts();
                         finishDefeat();
+                        // Force stop by clearing refs and state
+                        setCurrentEnemy(null);
+                        setEngagedMonsterId(null);
+                        setEngagedMonsterPos(null);
+                        engagedMonsterPosRef.current = null;
                         return;
                     }
-                    
-                    setTimeout(loop, 420);
+
+                    const loopTimeout = setTimeout(loop, 420);
+                    timeoutIds.push(loopTimeout);
                 }, 320);
+                timeoutIds.push(enemyTurnTimeout);
             } catch (e) {
                 console.error('Battle loop error:', e);
                 battleEnded = true;
+                clearAllTimeouts();
                 combatActiveRef.current = false;
                 setInCombat(false);
             }
@@ -406,11 +569,23 @@ export function World({
     const finishVictory = (isBoss, monsterId) => {
         try {
             combatActiveRef.current = false;
+
+            // COIN DROP LOGIC - Always drop 100 coins per enemy
+            const baseCoins = 100;
+            addCoins(baseCoins);
+            
+            // Play coin drop sound
+            if (coinDropAudio?.current) {
+                coinDropAudio.current.currentTime = 0;
+                coinDropAudio.current.volume = 1.0;
+                coinDropAudio.current.play().catch(e => console.log("Audio play blocked"));
+            }
+
+            // Only bosses drop relics, no material drops at all
             if (isBoss) {
                 dropRelic();
-            } else {
-                dropWorldLoot();
             }
+
             if (monsterId) {
                 setEntities(prev => {
                     const updated = prev.filter(e => e.id !== monsterId);
@@ -485,17 +660,23 @@ export function World({
 
     const generateEnemy = () => {
         const enemies = [
-            { name: 'Void Lurker', hp: 30, maxHp: 30, attacks: [
-                { name: 'Shadow Strike', damage: 8 },
-                { name: 'Void Grasp', damage: 12 }
-            ]},
-            { name: 'Cursed Wanderer', hp: 40, maxHp: 40, attacks: [
-                { name: 'Dark Bolt', damage: 10 },
-                { name: 'Hex', damage: 6 }
-            ]},
-            { name: 'Phantom', hp: 25, maxHp: 25, attacks: [
-                { name: 'Ethereal Slash', damage: 15 }
-            ]}
+            {
+                name: 'Void Lurker', hp: 30, maxHp: 30, attacks: [
+                    { name: 'Shadow Strike', damage: 8 },
+                    { name: 'Void Grasp', damage: 12 }
+                ]
+            },
+            {
+                name: 'Cursed Wanderer', hp: 40, maxHp: 40, attacks: [
+                    { name: 'Dark Bolt', damage: 10 },
+                    { name: 'Hex', damage: 6 }
+                ]
+            },
+            {
+                name: 'Phantom', hp: 25, maxHp: 25, attacks: [
+                    { name: 'Ethereal Slash', damage: 15 }
+                ]
+            }
         ];
         return enemies[Math.floor(Math.random() * enemies.length)];
     };
@@ -514,78 +695,15 @@ export function World({
         };
     };
 
-    const dropRelic = () => {
-        const relicPool = [
-            { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost', value: 0.1 },
-            { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost', value: 0.05 },
-            { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost', value: 0.03 },
-            { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll', value: 1 }
-        ];
-        let relic;
-        const rand = Math.random();
-        if (rand < 0.01) relic = relicPool[3];
-        else if (rand < 0.1) relic = relicPool[2];
-        else if (rand < 0.3) relic = relicPool[1];
-        else relic = relicPool[0];
-        setRelics(prev => [...prev, { ...relic, id: Date.now() }]);
-        // Show relic as item drop animation instead of blocking alert
-        setItemDrop({
-            id: Date.now(),
-            emoji: '🏆',
-            name: relic.name,
-            rarity: relic.rarity
-        });
-    };
+    // Moved dropRelic and dropWorldLoot to top of file
 
-    const dropWorldLoot = () => {
-        if (Math.random() < 0.25) {
-            setInventory(prev => ({
-                ...prev,
-                [UNIQUE_WORLD_ITEM.id]: (prev[UNIQUE_WORLD_ITEM.id] || 0) + 1
-            }));
-            setItemDrop({
-                id: Date.now(),
-                emoji: UNIQUE_WORLD_ITEM.emoji,
-                name: UNIQUE_WORLD_ITEM.name,
-                rarity: UNIQUE_WORLD_ITEM.rarity
-            });
-            return;
-        }
-
-        const rand = Math.random();
-        let material;
-        if (rand < 0.01) {
-            material = WORLD_MATERIALS.find(i => i.id === 'phoenix_feather');
-        } else if (rand < 0.05) {
-            const legendaries = WORLD_MATERIALS.filter(i => i.rarity === 'LEGENDARY');
-            material = legendaries[Math.floor(Math.random() * legendaries.length)];
-        } else if (rand < 0.15) {
-            const epics = WORLD_MATERIALS.filter(i => i.rarity === 'EPIC');
-            material = epics[Math.floor(Math.random() * epics.length)];
-        } else if (rand < 0.4) {
-            const rares = WORLD_MATERIALS.filter(i => i.rarity === 'RARE');
-            material = rares[Math.floor(Math.random() * rares.length)];
-        }
-        if (material) {
-            setInventory(prev => ({
-                ...prev,
-                [material.id]: (prev[material.id] || 0) + 1
-            }));
-            setItemDrop({
-                id: Date.now(),
-                emoji: material.emoji,
-                name: material.name,
-                rarity: material.rarity
-            });
-        }
-    };
 
     if (worldCooldown > 0) {
         return (
             <div className="world-cooldown">
                 <h1>🔒 WORLD LOCKED</h1>
                 <p>You died in the world. Cooldown: {worldCooldown} days remaining</p>
-                <button 
+                <button
                     className="rbx-btn"
                     onClick={() => {
                         // Go back to SHOP tab - dispatch custom event
@@ -672,15 +790,19 @@ export function World({
                                 position: 'absolute',
                                 left: `${entity.x}px`,
                                 top: `${entity.y}px`,
-                                fontSize: entity.type === 'monster' ? '2.5rem' : '2rem',
+                                fontSize: entity.isBoss ? '4rem' : 
+                                         (entity.type === 'monster' ? '2.5rem' : 
+                                          (entity.type === 'tree' ? '9rem' : 
+                                           (entity.type === 'house' ? '15rem' : '2rem'))),
                                 transform: 'translate(-50%, -50%)',
-                                zIndex: entity.type === 'monster' ? 50 : 10,
+                                zIndex: entity.type === 'monster' ? 50 : (entity.type === 'house' ? 5 : 10),
                                 filter: entity.id === engagedMonsterId ? 'drop-shadow(0 0 12px #ff4d6d)' : 'none'
                             }}
                         >
                             {entity.emoji}
                         </div>
                     ))}
+
 
                     {damageNumbers.map(d => (
                         <div
@@ -701,6 +823,64 @@ export function World({
                     ))}
                 </div>
             </div>
+
+            {/* RETURN TO HOUSE BUTTON */}
+            {showReturnButton && !inCombat && (
+                <button
+                    onClick={() => {
+                        setPlayerPos({ x: 0, y: 0 });
+                        playerPosRef.current = { x: 0, y: 0 };
+                    }}
+                    style={{
+                        position: 'fixed',
+                        bottom: '30px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        padding: '15px 40px',
+                        fontSize: '1.2rem',
+                        fontWeight: '900',
+                        background: 'rgba(26, 26, 26, 0.95)',
+                        border: '3px solid #d4af37',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        zIndex: 200,
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.background = '#d4af37';
+                        e.target.style.color = '#000';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.background = 'rgba(26, 26, 26, 0.95)';
+                        e.target.style.color = '#fff';
+                    }}
+                >
+                    🏠 Return to House
+                </button>
+            )}
+
+            {/* PRESS E TO ENTER PROMPT */}
+            {nearHouse && !inCombat && (
+                <div style={{
+                    position: 'fixed',
+                    top: '30%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(0, 0, 0, 0.8)',
+                    border: '3px solid #d4af37',
+                    borderRadius: '8px',
+                    padding: '20px 40px',
+                    fontSize: '1.5rem',
+                    fontWeight: '900',
+                    color: '#fff',
+                    zIndex: 200,
+                    textAlign: 'center',
+                    animation: 'popUpwards 0.3s ease-out'
+                }}>
+                    Press <span style={{ color: '#d4af37' }}>E</span> to Enter
+                </div>
+            )}
 
 
             {itemDrop && (
@@ -727,9 +907,9 @@ export function World({
                         fontSize: '0.8rem',
                         fontWeight: 'bold',
                         color: itemDrop.rarity === 'MYTHIC' ? '#ff6b9d' :
-                               itemDrop.rarity === 'LEGENDARY' ? '#ffaa00' :
-                               itemDrop.rarity === 'EPIC' ? '#a335ee' :
-                               itemDrop.rarity === 'RARE' ? '#0070dd' : '#fff',
+                            itemDrop.rarity === 'LEGENDARY' ? '#ffaa00' :
+                                itemDrop.rarity === 'EPIC' ? '#a335ee' :
+                                    itemDrop.rarity === 'RARE' ? '#0070dd' : '#fff',
                         textShadow: '0 0 10px currentColor',
                         whiteSpace: 'nowrap'
                     }}>

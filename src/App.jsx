@@ -3,6 +3,10 @@ import { ShopUpgrades } from './components/ShopUpgrades'
 import { CustomerList } from './components/CustomerList'
 import { CraftingHub } from './components/CraftingHub'
 import { World } from './components/World'
+import { MaterialShop } from './components/MaterialShop'
+import { StartScreen } from './components/StartScreen'
+import { GameOverScreen } from './components/GameOverScreen'
+import { Tutorial } from './components/Tutorial'
 import { useGameState, UI_PHASES } from './hooks/useGameState'
 import { MATERIALS, CRAFTED_ITEMS, RARITIES, GATHER_TABLE, WORKER_TYPES, WORKER_VARIANTS } from './utils/workerRNG'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -11,10 +15,29 @@ import './App.css'
 import { BackgroundWorkers } from './components/BackgroundWorkers';
 
 function App() {
+    const [mainTab, setMainTab] = useState('SHOP');
+    const [activeTab, setActiveTab] = useState(null);
+    const [invSubTab, setInvSubTab] = useState('materials');
+    const [indexSubTab, setIndexSubTab] = useState('materials');
+    const [workerVariantTab, setWorkerVariantTab] = useState('NORMAL');
+    const [epicReveal, setEpicReveal] = useState(null); // null, 'LEGENDARY', or 'MYTHIC'
+    const [variantReveal, setVariantReveal] = useState(null); // null or variant object
+    const [shuffleText, setShuffleText] = useState("");
+    const [doorTransition, setDoorTransition] = useState(false);
+    const [doorBgColor, setDoorBgColor] = useState('#2d5016');
+    const [gameStarted, setGameStarted] = useState(false);
+    const [gameOver, setGameOver] = useState(false);
+    const [maxHonor, setMaxHonor] = useState(0);
+    const [invTooltipPos, setInvTooltipPos] = useState({ top: 0, left: 0 });
+    const [hoveredInvItem, setHoveredInvItem] = useState(null);
+    const [tabTooltipPos, setTabTooltipPos] = useState({ top: 0, left: 0 });
+    const [hoveredTab, setHoveredTab] = useState(null);
+    const [tabTooltipSide, setTabTooltipSide] = useState('right'); // 'left' or 'right'
+
     const {
         honor, setHonor, phase, timeLeft, dayCount, lastRecruit, isRolling, performRecruitRoll,
         autoRoll, setAutoRoll, fastRoll, setFastRoll, luckBoost, setLuckBoost,
-        inventory, setInventory, workers, setWorkers, equippedWorkers, equipBest, craftItem,
+        inventory, setInventory, addItemToInventory, workers, setWorkers, equippedWorkers, equipBest, craftItem,
         permanentLuck, setPermanentLuck,
         customers, sellToCustomer, gatherEvents,
         autoDeleteRarities, toggleAutoDelete,
@@ -27,19 +50,19 @@ function App() {
         discoveredMaterials, discoveredCrafted, discoveredWorkers,
         maxCustomers, setMaxCustomers, gatherSpeed, setGatherSpeed, startingHonor, setStartingHonor,
         relics, setRelics, worldCooldown, setWorldCooldown,
-        bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP
-    } = useGameState();
-
-    const [mainTab, setMainTab] = useState('SHOP');
-    const [activeTab, setActiveTab] = useState(null);
-    const [invSubTab, setInvSubTab] = useState('materials');
-    const [indexSubTab, setIndexSubTab] = useState('materials');
-    const [workerVariantTab, setWorkerVariantTab] = useState('NORMAL');
-    const [epicReveal, setEpicReveal] = useState(null); // null, 'LEGENDARY', or 'MYTHIC'
-    const [variantReveal, setVariantReveal] = useState(null); // null or variant object
-    const [shuffleText, setShuffleText] = useState("");
+        bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP,
+        coins, addCoins, coinDropBonus, setCoinDropBonus, materialPurchases, setMaterialPurchases,
+        showTutorial, setShowTutorial
+    } = useGameState(gameStarted);
 
     const rollAudio = useRef(new Audio('/sounds/castanet-roll-120bpm-83002.mp3'));
+    const coinDropAudio = useRef(new Audio('/sounds/coin-drop-1-104046.mp3'));
+    const coinPayoutAudio = useRef(new Audio('/sounds/coin-payout-2-213523.mp3'));
+    const bingAudio = useRef(new Audio('/sounds/bing1-91919.mp3'));
+    const fireballAudio = useRef(new Audio('/sounds/fireball-whoosh-2-179126.mp3'));
+    const smallMonsterAttackAudio = useRef(new Audio('/sounds/small-monster-attack-195712.mp3'));
+    const largeMonsterAttackAudio = useRef(new Audio('/sounds/large-monster-attack-195713.mp3'));
+    const doorOpenAudio = useRef(new Audio('/sounds/open-door-stock-sfx-454246.mp3'));
 
     useEffect(() => {
         let interval;
@@ -101,6 +124,19 @@ function App() {
         }
     }, [lastRecruit, isRolling]);
 
+    // Auto-roll logic: wait for reveals to finish before next roll
+    useEffect(() => {
+        if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
+            // Wait a bit after animations clear before starting next roll
+            const timer = setTimeout(() => {
+                if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
+                    performRecruitRoll();
+                }
+            }, 200);
+            return () => clearTimeout(timer);
+        }
+    }, [autoRoll, isRolling, epicReveal, variantReveal, performRecruitRoll]);
+
     const formatTime = useCallback((seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -142,16 +178,64 @@ function App() {
 
     // Listen for switchToShop event from World component
     useEffect(() => {
-        const handleSwitch = () => setMainTab('SHOP');
+        const handleSwitch = (event) => {
+            // Play door sound and start transition
+            if (doorOpenAudio?.current) {
+                doorOpenAudio.current.currentTime = 0;
+                doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
+            }
+            setDoorBgColor('shop'); // Mark as shop background
+            setDoorTransition(true);
+            setTimeout(() => {
+                setMainTab('SHOP');
+                setDoorTransition(false);
+            }, 500);
+        };
         window.addEventListener('switchToShop', handleSwitch);
         return () => window.removeEventListener('switchToShop', handleSwitch);
-    }, []);
+    }, [doorOpenAudio]);
+
+    // Track max honor
+    useEffect(() => {
+        if (honor > maxHonor) {
+            setMaxHonor(honor);
+        }
+    }, [honor, maxHonor]);
+
+    // Check game over condition: when transitioning to DAY with 0 honor
+    useEffect(() => {
+        if (gameStarted && phase === UI_PHASES.DAY && honor === 0 && dayCount > 1) {
+            setGameOver(true);
+        }
+    }, [gameStarted, phase, honor, dayCount]);
+
+    // Show start screen if game not started
+    if (!gameStarted) {
+        return <StartScreen onStart={() => setGameStarted(true)} />;
+    }
+
+    // Show game over screen
+    if (gameOver) {
+        return (
+            <GameOverScreen
+                dayCount={dayCount - 1}
+                maxHonor={maxHonor}
+                onRestart={() => {
+                    window.location.reload();
+                }}
+            />
+        );
+    }
 
     return (
-        <div className={`app-container ${phase} ${epicReveal ? 'screen-shake' : ''}`}>
+        <>
+            {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
+            
+            <div className={`app-container ${phase} ${epicReveal ? 'screen-shake' : ''}`}>
             <BackgroundWorkers equippedWorkers={equippedWorkers} gatherEvents={gatherEvents} masterVolume={masterVolume} />
 
             {/* MAIN TAB NAVIGATION */}
+            {mainTab !== 'WORLD' && (
             <div style={{
                 position: 'fixed',
                 top: 20,
@@ -161,7 +245,7 @@ function App() {
                 gap: '20px',
                 zIndex: 1000
             }}>
-                <button 
+                <button
                     className="rbx-btn"
                     onClick={() => setMainTab('SHOP')}
                     style={{
@@ -175,11 +259,23 @@ function App() {
                 >
                     SHOP
                 </button>
-                <button 
+                <button
                     className="rbx-btn"
                     onClick={() => {
                         if (worldCooldown > 0) return; // Block if on cooldown
-                        setMainTab('WORLD');
+                        if (mainTab !== 'WORLD') {
+                            // Play door sound and start transition
+                            if (doorOpenAudio?.current) {
+                                doorOpenAudio.current.currentTime = 0;
+                                doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
+                            }
+                            setDoorBgColor('world'); // World background (green)
+                            setDoorTransition(true);
+                            setTimeout(() => {
+                                setMainTab('WORLD');
+                                setDoorTransition(false);
+                            }, 500); // Transition duration
+                        }
                     }}
                     style={{
                         padding: '15px 40px',
@@ -194,6 +290,7 @@ function App() {
                     {worldCooldown > 0 ? `WORLD (${worldCooldown}d)` : 'WORLD'}
                 </button>
             </div>
+            )}
 
             {/* LEGENDARY REVEAL */}
             {epicReveal === 'LEGENDARY' && (
@@ -231,50 +328,141 @@ function App() {
             <div className="hud">
                 <div className="hud-left">
                     <div className="stat-pill"><span>HONOR</span><span style={{ color: '#fff' }}>{honor.toLocaleString()} 🔮</span></div>
-                    <div className="stat-pill"><span>TIME</span><span style={{ color: '#60a5fa' }}>{formatTime(timeLeft)}</span></div>
-                    <div className="stat-pill"><span>GEMS</span><span style={{ color: '#f472b6' }}>{gems.toLocaleString()} 💎</span></div>
+                    <div className="stat-pill">
+                        <span>TIME</span>
+                        <span style={{ color: phase === UI_PHASES.NIGHT ? '#a855f7' : '#fbbf24' }}>
+                            {formatTime(timeLeft)} {phase === UI_PHASES.NIGHT ? "🌙" : "☀️"}
+                        </span>
+                    </div>
+                    <div className="stat-pill"><span>DAY</span><span style={{ color: '#f87171' }}>{dayCount}</span></div>
                 </div>
                 <div className="hud-right">
                     <div className="stat-pill"><span>SHOP LVL</span><span style={{ color: '#fbbf24' }}>{shopLevel} 🏪</span></div>
-                    <div className="stat-pill"><span>DAY</span><span style={{ color: '#f87171' }}>{dayCount}</span></div>
-                    <div className="stat-pill">
-                        <span style={{ color: phase === UI_PHASES.NIGHT ? '#a855f7' : '#fbbf24' }}>
-                            {phase === UI_PHASES.NIGHT ? "NIGHT 🌙" : "DAY ☀️"}
-                        </span>
-                    </div>
+                    <div className="stat-pill"><span>GEMS</span><span style={{ color: '#f472b6' }}>{gems.toLocaleString()} 💎</span></div>
+                    <div className="stat-pill"><span>COINS</span><span style={{ color: '#ffd700' }}>{coins.toLocaleString()} 🪙</span></div>
                 </div>
             </div>
 
             {/* LEFT MENU - Always visible */}
             <div className="side-menu left">
-                <div className={`menu-btn ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>📦</div>
-                <div className={`menu-btn ${activeTab === 'workers' ? 'active' : ''}`} onClick={() => setActiveTab('workers')}>👷</div>
-                <div className={`menu-btn ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => setActiveTab('shop')}>🛒</div>
+                <div 
+                    className={`menu-btn ${activeTab === 'inventory' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('inventory')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                        setTabTooltipSide('right');
+                        setHoveredTab('Inventory');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >📦</div>
+                <div 
+                    className={`menu-btn ${activeTab === 'workers' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('workers')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                        setTabTooltipSide('right');
+                        setHoveredTab('Workers');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >👷</div>
+                <div 
+                    className={`menu-btn ${activeTab === 'shop' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('shop')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                        setTabTooltipSide('right');
+                        setHoveredTab('Shop');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >🛒</div>
+                <div 
+                    className={`menu-btn ${mainTab === 'MAT_SHOP' ? 'active' : ''}`} 
+                    onClick={() => setMainTab('MAT_SHOP')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                        setTabTooltipSide('right');
+                        setHoveredTab('Material Shop');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >🪙</div>
             </div>
 
             {/* INDEX & SETTINGS (BOTTOM LEFT) - Always visible */}
-            <div className={`menu-btn ${activeTab === 'index' ? 'active' : ''}`}
+            <div 
+                className={`menu-btn ${activeTab === 'index' ? 'active' : ''}`}
                 style={{ position: 'fixed', bottom: '90px', left: '20px', zIndex: 100 }}
-                onClick={() => setActiveTab('index')}>📚</div>
-            <div className={`menu-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('index')}
+                onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                    setTabTooltipSide('right');
+                    setHoveredTab('Index');
+                }}
+                onMouseLeave={() => setHoveredTab(null)}
+            >📚</div>
+            <div 
+                className={`menu-btn ${activeTab === 'settings' ? 'active' : ''}`}
                 style={{ position: 'fixed', bottom: '20px', left: '20px', zIndex: 100 }}
-                onClick={() => setActiveTab('settings')}>⚙️</div>
+                onClick={() => setActiveTab('settings')}
+                onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                    setTabTooltipSide('right');
+                    setHoveredTab('Settings');
+                }}
+                onMouseLeave={() => setHoveredTab(null)}
+            >⚙️</div>
 
             {/* RIGHT MENU - Always visible */}
             <div className="side-menu right">
-                <div className={`menu-btn ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}>
+                <div 
+                    className={`menu-btn ${activeTab === 'customers' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('customers')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.left - 20 });
+                        setTabTooltipSide('left');
+                        setHoveredTab('Customers');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >
                     <div style={{ position: 'relative' }}>
                         👤
                         {customers.length > 0 && <div className="notification-dot">{customers.length}</div>}
                     </div>
                 </div>
-                <div className={`menu-btn ${activeTab === 'crafting' ? 'active' : ''}`} onClick={() => setActiveTab('crafting')}>⚒️</div>
-                <div className={`menu-btn rebirth-btn ${activeTab === 'rebirth' ? 'active' : ''} ${canRebirth ? 'can-rebirth' : ''}`}
-                    onClick={() => setActiveTab('rebirth')}>
+                <div 
+                    className={`menu-btn ${activeTab === 'crafting' ? 'active' : ''}`} 
+                    onClick={() => setActiveTab('crafting')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.left - 20 });
+                        setTabTooltipSide('left');
+                        setHoveredTab('Crafting');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >⚒️</div>
+                <div 
+                    className={`menu-btn rebirth-btn ${activeTab === 'rebirth' ? 'active' : ''} ${canRebirth ? 'can-rebirth' : ''}`}
+                    onClick={() => setActiveTab('rebirth')}
+                    onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTabTooltipPos({ top: rect.top + rect.height / 2, left: rect.left - 20 });
+                        setTabTooltipSide('left');
+                        setHoveredTab('Rebirth');
+                    }}
+                    onMouseLeave={() => setHoveredTab(null)}
+                >
                     🔄
                     {rebirthCount > 0 && <div className="rebirth-count">{rebirthCount}</div>}
                 </div>
             </div>
+
+
 
             {/* SHOP VIEW */}
             {mainTab === 'SHOP' && (
@@ -302,8 +490,18 @@ function App() {
                         <div className={`status-toggle ${autoRoll ? 'active' : ''}`} onClick={() => setAutoRoll(!autoRoll)}>
                             <span>AUTO</span><div className="toggle-indicator indicator-auto" />
                         </div>
-                        <div className={`status-toggle ${luckBoost ? 'active' : ''}`} onClick={() => setLuckBoost(!luckBoost)}>
-                            <span>LUCK</span><div className="toggle-indicator indicator-luck" />
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                            <div className={`status-toggle ${luckBoost ? 'active' : ''}`} onClick={() => setLuckBoost(!luckBoost)}>
+                                <span>LUCK</span><div className="toggle-indicator indicator-luck" />
+                            </div>
+                            <div style={{ 
+                                fontSize: '0.65rem', 
+                                fontWeight: '900', 
+                                color: luckBoost ? '#fbbf24' : '#666',
+                                transition: 'color 0.2s'
+                            }}>
+                                {permanentLuck.toFixed(1)}x
+                            </div>
                         </div>
                         <div className={`status-toggle ${fastRoll ? 'active' : ''}`} onClick={() => setFastRoll(!fastRoll)}>
                             <span>FAST</span><div className="toggle-indicator indicator-fast" />
@@ -352,7 +550,7 @@ function App() {
                             <h2>WORKSTATION</h2>
                             <button className="rbx-btn close-btn" onClick={() => setActiveTab(null)}>✕</button>
                         </div>
-                        <CraftingHub inventory={inventory} craftItem={craftItem} customers={customers} />
+                        <CraftingHub inventory={inventory} craftItem={craftItem} customers={customers} bingAudio={bingAudio} />
                     </div>
                 </div>
             )}
@@ -470,6 +668,7 @@ function App() {
                             <div className={`tab ${indexSubTab === 'materials' ? 'active' : ''}`} onClick={() => setIndexSubTab('materials')}>MATERIALS</div>
                             <div className={`tab ${indexSubTab === 'crafted' ? 'active' : ''}`} onClick={() => setIndexSubTab('crafted')}>CRAFTED</div>
                             <div className={`tab ${indexSubTab === 'workers' ? 'active' : ''}`} onClick={() => setIndexSubTab('workers')}>WORKERS</div>
+                            <div className={`tab ${indexSubTab === 'relics' ? 'active' : ''}`} onClick={() => setIndexSubTab('relics')}>RELICS</div>
                         </div>
 
                         {/* Variant Sub-Tabs (only visible when Workers selected) */}
@@ -497,7 +696,32 @@ function App() {
                             </div>
                         )}
 
-                        <div className="inventory-grid" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                        <div 
+                            className="inventory-grid" 
+                            style={{ maxHeight: '400px', overflowY: 'auto', cursor: 'grab', userSelect: 'none' }}
+                            onMouseDown={(e) => {
+                                if (e.button !== 2) return;
+                                e.preventDefault();
+                                const slider = e.currentTarget;
+                                slider.style.cursor = 'grabbing';
+                                const startY = e.pageY - slider.offsetTop;
+                                const scrollTop = slider.scrollTop;
+                                const onMouseMove = (moveE) => {
+                                    moveE.preventDefault();
+                                    const y = moveE.pageY - slider.offsetTop;
+                                    const walk = (y - startY) * 2;
+                                    slider.scrollTop = scrollTop - walk;
+                                };
+                                const onMouseUp = () => {
+                                    slider.style.cursor = 'grab';
+                                    window.removeEventListener('mousemove', onMouseMove);
+                                    window.removeEventListener('mouseup', onMouseUp);
+                                };
+                                window.addEventListener('mousemove', onMouseMove);
+                                window.addEventListener('mouseup', onMouseUp);
+                            }}
+                            onContextMenu={(e) => e.preventDefault()}
+                        >
                             {indexSubTab === 'materials' && MATERIALS.map(mat => {
                                 const unlocked = discoveredMaterials.has(mat.id);
                                 const rarity = RARITIES[mat.rarity];
@@ -573,11 +797,67 @@ function App() {
                                     })}
                                 </>
                             )}
+
+                            {indexSubTab === 'relics' && (() => {
+                                const ALL_RELICS = [
+                                    // COMMON
+                                    { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost' },
+                                    { name: 'Coin Charm', desc: '+20% Coin drops', rarity: 'COMMON', effect: 'coin_boost' },
+                                    { name: 'Swift Relic', desc: '+10% Gather speed', rarity: 'COMMON', effect: 'gather_speed' },
+                                    // UNCOMMON
+                                    { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost' },
+                                    { name: 'Fortune Stone', desc: '+15% Coin drops', rarity: 'UNCOMMON', effect: 'coin_boost' },
+                                    { name: 'Time Shard', desc: '+15s Day duration', rarity: 'UNCOMMON', effect: 'day_extend' },
+                                    // RARE
+                                    { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost' },
+                                    { name: 'Battle Relic', desc: '+5 Bonus damage', rarity: 'RARE', effect: 'damage_boost' },
+                                    { name: 'Shield Relic', desc: '+25 Max HP', rarity: 'RARE', effect: 'hp_boost' },
+                                    // EPIC
+                                    { name: 'Golden Idol', desc: '+50% Coin drops', rarity: 'EPIC', effect: 'coin_boost' },
+                                    { name: 'Auto Recruiter', desc: 'Recruit +1 worker on day change', rarity: 'EPIC', effect: 'auto_recruit' },
+                                    // MYTHIC
+                                    { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll' }
+                                ];
+
+                                const rarityColors = {
+                                    'MYTHIC': '#ff0055',
+                                    'LEGENDARY': '#eab308',
+                                    'EPIC': '#a855f7',
+                                    'RARE': '#3b82f6',
+                                    'UNCOMMON': '#22c55e',
+                                    'COMMON': '#888'
+                                };
+
+                                return ALL_RELICS.map((relic, idx) => {
+                                    const hasRelic = relics.some(r => r.name === relic.name);
+                                    const color = rarityColors[relic.rarity];
+                                    return (
+                                        <div key={idx} className={`inv-item index-item ${hasRelic ? '' : 'locked'}`}
+                                            style={{ borderColor: hasRelic ? color + '55' : '#333' }}>
+                                            <div className="item-icon" style={{ filter: hasRelic ? 'none' : 'grayscale(1) brightness(0.3)' }}>
+                                                🏆
+                                            </div>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: '800', marginTop: '4px', color: hasRelic ? color : '#555' }}>
+                                                {hasRelic ? relic.name : '???'}
+                                            </div>
+                                            <div style={{ fontSize: '0.5rem', color: hasRelic ? color : '#444', opacity: 0.7 }}>
+                                                {relic.rarity}
+                                            </div>
+                                            {hasRelic && (
+                                                <div style={{ fontSize: '0.5rem', color: '#aaa', marginTop: '2px', textAlign: 'center' }}>
+                                                    {relic.desc}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                         <div style={{ padding: '15px', textAlign: 'center', fontSize: '0.7rem', color: '#666', borderTop: '1px solid #333' }}>
                             Materials: {discoveredMaterials.size}/{MATERIALS.length} |
                             Crafted: {discoveredCrafted.size}/{CRAFTED_ITEMS.length} |
-                            Workers: {discoveredWorkers.size}/{Object.keys(RARITIES).length * WORKER_TYPES.length * Object.keys(WORKER_VARIANTS).length}
+                            Workers: {discoveredWorkers.size}/{Object.keys(RARITIES).length * WORKER_TYPES.length * Object.keys(WORKER_VARIANTS).length} |
+                            Relics: {relics.length}/12
                         </div>
                     </div>
                 </div>
@@ -593,40 +873,201 @@ function App() {
                         <div className="tab-bar">
                             <div className={`tab ${invSubTab === 'materials' ? 'active' : ''}`} onClick={() => setInvSubTab('materials')}>MATERIALS</div>
                             <div className={`tab ${invSubTab === 'crafted' ? 'active' : ''}`} onClick={() => setInvSubTab('crafted')}>CRAFTED</div>
+                            <div className={`tab ${invSubTab === 'relics' ? 'active' : ''}`} onClick={() => setInvSubTab('relics')}>RELICS</div>
                         </div>
                         <div className="modal-body-scrollable">
                             <div className="inventory-grid">
-                            {invSubTab === 'materials' ? (
-                                Object.entries(inventory).map(([id, count]) => {
-                                    if (id === 'crafted' || count <= 0) return null;
-                                    const info = getInfo(id, 'material');
-                                    if (!info) return null;
-                                    return (
-                                        <div key={id} className={`inv-item rarity-border-${info.rarity.toLowerCase()}`} style={{ borderLeft: `4px solid ${info.color}` }}>
-                                            <span className="item-icon">{getEmoji(id, 'material')}</span>
-                                            <div className="item-chance-tag">{info.chance}</div>
-                                            <span className="item-count">x{count}</span>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <>
-                                    {Object.entries(inventory.crafted).map(([id, count]) => {
-                                        if (count <= 0) return null;
-                                        const info = getInfo(id, 'crafted');
+                                {invSubTab === 'materials' ? (
+                                    Object.entries(inventory).map(([id, count]) => {
+                                        if (id === 'crafted' || count <= 0) return null;
+                                        const info = getInfo(id, 'material');
+                                        if (!info) return null;
                                         return (
-                                            <div key={id} className="inv-item">
-                                                <span className="item-icon">{getEmoji(id, 'crafted')}</span>
-                                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginTop: '2px', textTransform: 'uppercase' }}>{id}</div>
+                                            <div 
+                                                key={id} 
+                                                className={`inv-item rarity-border-${info.rarity.toLowerCase()}`} 
+                                                style={{ borderLeft: `4px solid ${info.color}` }}
+                                                onMouseEnter={(e) => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setInvTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                                                    setHoveredInvItem({ type: 'material', id, count, info });
+                                                }}
+                                                onMouseLeave={() => setHoveredInvItem(null)}
+                                            >
+                                                <span className="item-icon">{getEmoji(id, 'material')}</span>
+                                                <div className="item-chance-tag">{info.chance}</div>
                                                 <span className="item-count">x{count}</span>
                                             </div>
                                         );
-                                    })}
-                                    {Object.keys(inventory.crafted).length === 0 && (
-                                        <div style={{ gridColumn: 'span 3', padding: '40px', opacity: 0.2, textAlign: 'center' }}>No Crafted Items Yet</div>
-                                    )}
-                                </>
-                            )}                            </div>                        </div>
+                                    })
+                                ) : invSubTab === 'relics' ? (
+                                    <>
+                                        {relics.length > 0 ? relics.map((relic) => {
+                                            const rarityColors = {
+                                                'MYTHIC': '#ff0055',
+                                                'LEGENDARY': '#eab308',
+                                                'EPIC': '#a855f7',
+                                                'RARE': '#3b82f6',
+                                                'UNCOMMON': '#22c55e',
+                                                'COMMON': '#888'
+                                            };
+                                            return (
+                                                <div 
+                                                    key={relic.id} 
+                                                    className="inv-item" 
+                                                    style={{ borderLeft: `4px solid ${rarityColors[relic.rarity]}` }}
+                                                    onMouseEnter={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        setInvTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                                                        setHoveredInvItem({ type: 'relic', relic, color: rarityColors[relic.rarity] });
+                                                    }}
+                                                    onMouseLeave={() => setHoveredInvItem(null)}
+                                                >
+                                                    <span className="item-icon">🏆</span>
+                                                    <div className="item-chance-tag" style={{ background: rarityColors[relic.rarity], color: '#000', fontWeight: 'bold' }}>
+                                                        {relic.rarity}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 'bold', marginTop: '4px', textAlign: 'center' }}>
+                                                        {relic.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.6rem', opacity: 0.7, marginTop: '2px', textAlign: 'center' }}>
+                                                        {relic.desc}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }) : (
+                                            <div style={{ gridColumn: 'span 3', padding: '40px', opacity: 0.2, textAlign: 'center' }}>No Relics Yet - Defeat Bosses!</div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {Object.entries(inventory.crafted).map(([id, count]) => {
+                                            if (count <= 0) return null;
+                                            const info = getInfo(id, 'crafted');
+                                            return (
+                                                <div 
+                                                    key={id} 
+                                                    className="inv-item"
+                                                    onMouseEnter={(e) => {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        setInvTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 20 });
+                                                        setHoveredInvItem({ type: 'crafted', id, count, info });
+                                                    }}
+                                                    onMouseLeave={() => setHoveredInvItem(null)}
+                                                >
+                                                    <span className="item-icon">{getEmoji(id, 'crafted')}</span>
+                                                    <div style={{ fontSize: '0.6rem', opacity: 0.5, marginTop: '2px', textTransform: 'uppercase' }}>{id}</div>
+                                                    <span className="item-count">x{count}</span>
+                                                </div>
+                                            );
+                                        })}
+                                        {Object.keys(inventory.crafted).length === 0 && (
+                                            <div style={{ gridColumn: 'span 3', padding: '40px', opacity: 0.2, textAlign: 'center' }}>No Crafted Items Yet</div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Global Inventory Tooltip */}
+                        {hoveredInvItem && (() => {
+                            const item = hoveredInvItem;
+                            
+                            if (item.type === 'material') {
+                                const mat = MATERIALS.find(m => m.id === item.id);
+                                return (
+                                    <div style={{
+                                        position: 'fixed',
+                                        top: `${invTooltipPos.top}px`,
+                                        left: `${invTooltipPos.left}px`,
+                                        transform: 'translateY(-50%)',
+                                        background: '#1a1a1a',
+                                        border: `2px solid ${item.info.color}`,
+                                        borderRadius: '8px',
+                                        padding: '16px',
+                                        minWidth: '200px',
+                                        zIndex: 10000,
+                                        boxShadow: `0 0 30px ${item.info.color}88`,
+                                        pointerEvents: 'none'
+                                    }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: item.info.color, marginBottom: '10px' }}>
+                                            {mat?.emoji} {mat?.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '8px' }}>
+                                            {item.info.rarity}
+                                        </div>
+                                        <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '8px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#10b981', marginBottom: '4px' }}>
+                                                Gather Chance: {item.info.chance}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: '#3b82f6' }}>
+                                                In Inventory: x{item.count}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            } else if (item.type === 'relic') {
+                                return (
+                                    <div style={{
+                                        position: 'fixed',
+                                        top: `${invTooltipPos.top}px`,
+                                        left: `${invTooltipPos.left}px`,
+                                        transform: 'translateY(-50%)',
+                                        background: '#1a1a1a',
+                                        border: `2px solid ${item.color}`,
+                                        borderRadius: '8px',
+                                        padding: '16px',
+                                        minWidth: '250px',
+                                        zIndex: 10000,
+                                        boxShadow: `0 0 30px ${item.color}88`,
+                                        pointerEvents: 'none'
+                                    }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: item.color, marginBottom: '10px' }}>
+                                            🏆 {item.relic.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: item.color, marginBottom: '8px', fontWeight: 'bold' }}>
+                                            {item.relic.rarity}
+                                        </div>
+                                        <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '8px', fontSize: '0.7rem', color: '#ccc' }}>
+                                            {item.relic.desc}
+                                        </div>
+                                    </div>
+                                );
+                            } else if (item.type === 'crafted') {
+                                const craftedItem = CRAFTED_ITEMS.find(ci => ci.id === item.id);
+                                const tierColors = { BASIC: '#94a3b8', INTERMEDIATE: '#10b981', ADVANCED: '#a855f7', LEGENDARY: '#eab308', MYTHIC: '#ff0055' };
+                                const color = tierColors[craftedItem?.tier] || '#3b82f6';
+                                
+                                return (
+                                    <div style={{
+                                        position: 'fixed',
+                                        top: `${invTooltipPos.top}px`,
+                                        left: `${invTooltipPos.left}px`,
+                                        transform: 'translateY(-50%)',
+                                        background: '#1a1a1a',
+                                        border: `2px solid ${color}`,
+                                        borderRadius: '8px',
+                                        padding: '16px',
+                                        minWidth: '200px',
+                                        zIndex: 10000,
+                                        boxShadow: `0 0 30px ${color}88`,
+                                        pointerEvents: 'none'
+                                    }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: color, marginBottom: '10px' }}>
+                                            {craftedItem?.emoji} {craftedItem?.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '8px' }}>
+                                            {craftedItem?.tier}
+                                        </div>
+                                        <div style={{ borderTop: '1px solid #333', paddingTop: '8px', marginTop: '8px' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#3b82f6' }}>
+                                                In Inventory: x{item.count}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 </div>
             )}
@@ -672,7 +1113,32 @@ function App() {
                                 setBonusDamage={setBonusDamage}
                                 bonusMaxHP={bonusMaxHP}
                                 setBonusMaxHP={setBonusMaxHP}
+                                coinDropBonus={coinDropBonus}
+                                setCoinDropBonus={setCoinDropBonus}
                             />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MATERIAL SHOP VIEW */}
+            {mainTab === 'MAT_SHOP' && (
+                <div className="modal-overlay" style={{ zIndex: 900 }}>
+                    <div className="modal-content rbx-panel" style={{ height: '80vh', padding: '0' }}>
+                        <div className="modal-header">
+                            <h2>MATERIAL SHOP</h2>
+                            <button className="rbx-btn close-btn" onClick={() => setMainTab('SHOP')}>✕</button>
+                        </div>
+                        <div className="modal-body-scrollable">
+                            <MaterialShop
+                                coins={coins}
+                            addCoins={addCoins}
+                            addItemToInventory={addItemToInventory}
+                            materialPurchases={materialPurchases}
+                            setMaterialPurchases={setMaterialPurchases}
+                            coinPayoutAudio={coinPayoutAudio}
+                            bingAudio={bingAudio}
+                        />
                         </div>
                     </div>
                 </div>
@@ -680,7 +1146,7 @@ function App() {
 
             {/* WORLD VIEW */}
             {mainTab === 'WORLD' && (
-                <World 
+                <World
                     honor={honor}
                     setHonor={setHonor}
                     relics={relics}
@@ -690,11 +1156,69 @@ function App() {
                     dayCount={dayCount}
                     inventory={inventory}
                     setInventory={setInventory}
+                    addItemToInventory={addItemToInventory}
+                    addCoins={addCoins}
                     bonusDamage={bonusDamage}
                     bonusMaxHP={bonusMaxHP}
+                    coinDropAudio={coinDropAudio}
+                    fireballAudio={fireballAudio}
+                    smallMonsterAttackAudio={smallMonsterAttackAudio}
+                    largeMonsterAttackAudio={largeMonsterAttackAudio}
                 />
             )}
-        </div>
+
+            {/* DOOR TRANSITION */}
+            {doorTransition && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: phase === 'day' 
+                        ? 'radial-gradient(circle at center, #3b82f633 0%, #000 100%)' 
+                        : 'radial-gradient(circle at center, #a855f722 0%, #000 100%)',
+                    zIndex: 10000,
+                    pointerEvents: 'none',
+                    display: 'flex'
+                }}>
+                    <div style={{
+                        flex: 1,
+                        background: '#3d2817',
+                        animation: 'doorOpenLeft 0.5s ease-out forwards'
+                    }} />
+                    <div style={{
+                        flex: 1,
+                        background: '#3d2817',
+                        animation: 'doorOpenRight 0.5s ease-out forwards'
+                    }} />
+                </div>
+            )}
+
+            {/* Global Tab Tooltip */}
+            {hoveredTab && (
+                <div style={{
+                    position: 'fixed',
+                    top: `${tabTooltipPos.top}px`,
+                    left: `${tabTooltipPos.left}px`,
+                    transform: tabTooltipSide === 'left' ? 'translate(-100%, -50%)' : 'translateY(-50%)',
+                    background: '#1a1a1a',
+                    border: '2px solid #3b82f6',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    zIndex: 10000,
+                    boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)',
+                    pointerEvents: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: '900',
+                    color: '#fff',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {hoveredTab}
+                </div>
+            )}
+            </div>
+        </>
     )
 }
 
