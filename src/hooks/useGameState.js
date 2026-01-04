@@ -1,32 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { rollWorker, RARITIES, CRAFTED_ITEMS, MATERIALS, GATHER_TABLE } from '../utils/workerRNG';
-
 export const UI_PHASES = {
     DAY: 'day',
     NIGHT: 'night',
 };
-
 const BASE_PHASE_DURATION = 120; 
 const GATHER_INTERVAL = 3000;
 const CUSTOMER_INTERVAL = 8000; 
-
 export function useGameState(gameStarted = true) {
     const [honor, setHonor] = useState(0);
     const [phase, setPhase] = useState(UI_PHASES.DAY);
     const [timeLeft, setTimeLeft] = useState(BASE_PHASE_DURATION);
     const [dayCount, setDayCount] = useState(1);
     const [lastRecruit, setLastRecruit] = useState(null);
-
     const [autoRoll, setAutoRoll] = useState(false);
     const [fastRoll, setFastRoll] = useState(false);
     const [luckBoost, setLuckBoost] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
-
     const [workers, setWorkers] = useState([]);
     const [equippedWorkers, setEquippedWorkers] = useState({
         Gatherer: [], Salesman: [], Researcher: [], Smith: [], Oracle: [], Mechanic: [], Chef: [], Guard: []
     });
-
     const [inventory, setInventory] = useState(() => {
         const initial = MATERIALS.reduce((acc, mat) => {
             acc[mat.id] = 0;
@@ -34,14 +28,11 @@ export function useGameState(gameStarted = true) {
         }, {});
         return { ...initial, crafted: {} };
     });
-
     const [customers, setCustomers] = useState([]);
     const [shadyClientSpawned, setShadyClientSpawned] = useState(false);
-
     const [discoveredMaterials, setDiscoveredMaterials] = useState(new Set());
     const [discoveredCrafted, setDiscoveredCrafted] = useState(new Set());
     const [discoveredWorkers, setDiscoveredWorkers] = useState(new Set()); 
-
     const addItemToInventory = useCallback((itemId, quantity = 1) => {
         console.log(`[INVENTORY] Adding ${quantity}x ${itemId}`);
         setInventory(prev => {
@@ -53,20 +44,17 @@ export function useGameState(gameStarted = true) {
                 [itemId]: newCount
             };
         });
-        
         setDiscoveredMaterials(prev => {
             const next = new Set(prev);
             next.add(itemId);
             return next;
         });
     }, []);
-
     const [permanentLuck, setPermanentLuck] = useState(1.0);
     const [autoDeleteRarities, setAutoDeleteRarities] = useState([]);
     const [masterVolume, setMasterVolume] = useState(0.5);
     const [rebirthCount, setRebirthCount] = useState(0);
     const [showTutorial, setShowTutorial] = useState(true);
-
     const [gems, setGems] = useState(0);
     const [shopLevel, setShopLevel] = useState(1);
     const [dayDuration, setDayDuration] = useState(BASE_PHASE_DURATION);
@@ -79,29 +67,23 @@ export function useGameState(gameStarted = true) {
     const [maxCustomers, setMaxCustomers] = useState(8);
     const [gatherSpeed, setGatherSpeed] = useState(1.0); 
     const [startingHonor, setStartingHonor] = useState(0);
-
     const [relics, setRelics] = useState([]);
     const [worldCooldown, setWorldCooldown] = useState(0);
-
     const [bonusDamage, setBonusDamage] = useState(0); 
     const [bonusMaxHP, setBonusMaxHP] = useState(0); 
-
     const [coins, setCoins] = useState(0);
     const [coinDropBonus, setCoinDropBonus] = useState(1.0); 
     const [materialPurchases, setMaterialPurchases] = useState({}); 
-
     const addCoins = useCallback((amount) => {
         const finalAmount = Math.floor(amount * coinDropBonus);
         console.log(`[COINS] Adding ${finalAmount} coins (base: ${amount}, bonus: ${coinDropBonus}x)`);
         setCoins(prev => prev + finalAmount);
         return finalAmount;
     }, [coinDropBonus]);
-
     const toggleAutoDelete = useCallback((rarityKey) => {
         setAutoDeleteRarities(prev => {
             const isAddingToAutoDelete = !prev.includes(rarityKey);
             if (isAddingToAutoDelete) {
-                
                 setWorkers(currentWorkers => {
                     const equippedIds = Object.values(equippedWorkers).flat().map(w => w.id);
                     return currentWorkers.filter(w =>
@@ -114,15 +96,12 @@ export function useGameState(gameStarted = true) {
             }
         });
     }, [equippedWorkers]);
-
     useEffect(() => {
         if (!gameStarted) return; 
-        
         let timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     const nextPhase = phase === UI_PHASES.DAY ? UI_PHASES.NIGHT : UI_PHASES.DAY;
-
                     if (nextPhase === UI_PHASES.NIGHT && customers.length > 0) {
                         setHonor(currentHonor => {
                             const penaltyPerClient = Math.floor(currentHonor * 0.2);
@@ -131,16 +110,13 @@ export function useGameState(gameStarted = true) {
                         });
                         setCustomers([]);
                     }
-
                     if (nextPhase === UI_PHASES.DAY) {
                         setCustomers([]);
                         setShadyClientSpawned(false);
                     }
-
                     if (nextPhase === UI_PHASES.DAY && worldCooldown > 0) {
                         setWorldCooldown(prev => Math.max(0, prev - 1));
                     }
-
                     setPhase(nextPhase);
                     if (nextPhase === UI_PHASES.DAY) setDayCount(d => d + 1);
                     return nextPhase === UI_PHASES.DAY ? dayDuration : nightDuration;
@@ -150,46 +126,37 @@ export function useGameState(gameStarted = true) {
         }, 1000);
         return () => clearInterval(timer);
     }, [gameStarted, phase, dayDuration, nightDuration, customers]);
-
     const performRecruitRoll = useCallback(() => {
         if (isRolling) return;
         setIsRolling(true);
         const rollTime = fastRoll ? 160 : 800; 
         setTimeout(() => {
             let currentLuck = luckBoost ? permanentLuck : 1.0;
-
             const luckRelic = relics.find(r => r.effect === 'luck_boost');
             if (luckRelic) {
                 currentLuck *= (1 + luckRelic.value);
             }
-
             const doubleRollRelic = relics.find(r => r.effect === 'double_roll');
             const rollCount = doubleRollRelic ? 2 : 1;
-
             for (let i = 0; i < rollCount; i++) {
                 const worker = rollWorker(currentLuck);
-
                 const isVariant = worker.variantKey && worker.variantKey !== 'NORMAL';
                 if (!autoDeleteRarities.includes(worker.rarityKey) || isVariant) {
                     setWorkers(prev => [...prev, worker]);
                 }
-
                 const workerKey = `${worker.rarityKey}-${worker.type}-${worker.variantKey || 'NORMAL'}`;
                 setDiscoveredWorkers(prev => {
                     const next = new Set(prev);
                     next.add(workerKey);
                     return next;
                 });
-
                 if (i === rollCount - 1) {
                     setLastRecruit(worker);
                 }
             }
-
             setIsRolling(false);
         }, rollTime);
     }, [isRolling, fastRoll, luckBoost, permanentLuck, autoDeleteRarities, relics]);
-
     const equipBest = useCallback(() => {
         const types = ['Gatherer', 'Salesman', 'Researcher', 'Smith', 'Oracle', 'Mechanic', 'Chef', 'Guard'];
         const newEquipped = { Gatherer: [], Salesman: [], Researcher: [], Smith: [], Oracle: [], Mechanic: [], Chef: [], Guard: [] };
@@ -199,17 +166,13 @@ export function useGameState(gameStarted = true) {
         });
         setEquippedWorkers(newEquipped);
     }, [workers]);
-
     const [gatherEvents, setGatherEvents] = useState([]);
-
     useEffect(() => {
         const gatherInterval = setInterval(() => {
             let matsFound = {};
             const newEvents = [];
-
             Object.keys(equippedWorkers).forEach(type => {
                 equippedWorkers[type].forEach(w => {
-                    
                     const rarityMultipliers = {
                         COMMON: { chance: 1.0, amount: 1 },
                         UNCOMMON: { chance: 1.5, amount: 1 },
@@ -219,21 +182,18 @@ export function useGameState(gameStarted = true) {
                         MYTHIC: { chance: 10.0, amount: 10 }
                     };
                     const multiplier = rarityMultipliers[w.rarityKey] || rarityMultipliers.COMMON;
-
                     let gatherMultiplier = { ...multiplier };
                     const gatherRelic = relics.find(r => r.effect === 'gather_boost');
                     if (gatherRelic) {
                         gatherMultiplier.chance *= (1 + gatherRelic.value);
                         gatherMultiplier.amount = Math.floor(gatherMultiplier.amount * (1 + gatherRelic.value));
                     }
-
                     const tryGather = (matId, baseChance, idFallback = null) => {
                         const boostedChance = Math.min(0.99, baseChance * gatherMultiplier.chance);
                         if (Math.random() < boostedChance) {
                             const amount = gatherMultiplier.amount;
                             const finalId = MATERIALS.find(m => m.id === matId) ? matId : idFallback;
                             if (!finalId) return;
-
                             matsFound[finalId] = (matsFound[finalId] || 0) + amount;
                             newEvents.push({
                                 eventId: `gather-${Date.now()}-${Math.random()}`,
@@ -244,14 +204,12 @@ export function useGameState(gameStarted = true) {
                             });
                         }
                     };
-
                     const lootPool = GATHER_TABLE[type] || [];
                     lootPool.forEach(loot => {
                         tryGather(loot.id, loot.chance, loot.id_fallback);
                     });
                 });
             });
-
             if (Object.keys(matsFound).length > 0) {
                 setInventory(prev => {
                     let updated = { ...prev };
@@ -260,7 +218,6 @@ export function useGameState(gameStarted = true) {
                     });
                     return updated;
                 });
-                
                 setDiscoveredMaterials(prev => {
                     const next = new Set(prev);
                     Object.keys(matsFound).forEach(k => next.add(k));
@@ -272,7 +229,6 @@ export function useGameState(gameStarted = true) {
         return () => clearInterval(gatherInterval);
         return () => clearInterval(gatherInterval);
     }, [equippedWorkers, phase, gatherSpeed, relics]);
-
     useEffect(() => {
         setDiscoveredMaterials(prev => {
             const next = new Set(prev);
@@ -286,31 +242,24 @@ export function useGameState(gameStarted = true) {
             return changed ? next : prev;
         });
     }, [inventory]);
-
     useEffect(() => {
         const custTimer = setInterval(() => {
             if (phase === UI_PHASES.NIGHT) return;
-
             const maxClients = Math.min(maxCustomers, dayCount <= 4 ? 3 : maxCustomers);
             if (customers.length >= maxClients) return;
-
             const salesmanPower = equippedWorkers.Salesman.reduce((acc, w) => {
                 const p = { COMMON: 1, UNCOMMON: 2, RARE: 4, EPIC: 10, LEGENDARY: 25, MYTHIC: 100 }[w.rarityKey] || 1;
                 return acc + p;
             }, 0);
-
             if (Math.random() < (0.3 + (salesmanPower * 0.05)) * customerSpawnMod) {
-                
                 const availableItems = dayCount <= 5
                     ? CRAFTED_ITEMS.filter(item => item.tier === 'BASIC')
                     : CRAFTED_ITEMS;
-
                 const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
                 const tierMultipliers = { BASIC: 1, INTERMEDIATE: 5, ADVANCED: 25, LEGENDARY: 500, MYTHIC: 10000 };
                 const tierMult = tierMultipliers[randomItem.tier] || 1;
                 const baseReward = 50 + (Object.values(randomItem.recipe).reduce((a, b) => a + b, 0) * 20);
                 const reward = baseReward * tierMult;
-
                 const names = ["Cursed Collector", "Void Merchant", "Soul Seeker", "Dark Noble", "Grave Robber", "Lost Spirit"];
                 const newCust = {
                     id: Date.now(),
@@ -324,23 +273,18 @@ export function useGameState(gameStarted = true) {
         }, CUSTOMER_INTERVAL);
         return () => clearInterval(custTimer);
     }, [customers, equippedWorkers.Salesman, phase, dayCount]);
-
     useEffect(() => {
         if (phase !== UI_PHASES.NIGHT || shadyClientSpawned) return;
-
         if (Math.random() < 0.5) {
-            
             const hardItems = CRAFTED_ITEMS.filter(item => 
                 item.tier === 'ADVANCED' || item.tier === 'LEGENDARY' || item.tier === 'MYTHIC'
             );
-
             if (hardItems.length > 0) {
                 const randomItem = hardItems[Math.floor(Math.random() * hardItems.length)];
                 const tierMultipliers = { ADVANCED: 25, LEGENDARY: 500, MYTHIC: 10000 };
                 const tierMult = tierMultipliers[randomItem.tier] || 1;
                 const baseReward = 50 + (Object.values(randomItem.recipe).reduce((a, b) => a + b, 0) * 20);
                 const reward = baseReward * tierMult * 2; 
-
                 const shadyClient = {
                     id: Date.now(),
                     name: "🌙 Shady Client #" + (Math.floor(Math.random() * 900) + 100),
@@ -353,11 +297,9 @@ export function useGameState(gameStarted = true) {
             }
         }
     }, [phase, shadyClientSpawned]);
-
     const sellToCustomer = useCallback((custId) => {
         const cust = customers.find(c => c.id === custId);
         if (!cust) return false;
-
         const itemCount = inventory.crafted[cust.request.id] || 0;
         if (itemCount > 0) {
             const salesmanPower = equippedWorkers.Salesman.reduce((acc, w) => {
@@ -365,12 +307,10 @@ export function useGameState(gameStarted = true) {
                 return acc + p;
             }, 0);
             let bonusMultiplier = 1 + (salesmanPower * 0.1);
-
             const honorRelic = relics.find(r => r.effect === 'honor_boost');
             if (honorRelic) {
                 bonusMultiplier *= (1 + honorRelic.value);
             }
-
             setInventory(prev => {
                 const next = { ...prev, crafted: { ...prev.crafted } };
                 next.crafted[cust.request.id]--;
@@ -382,7 +322,6 @@ export function useGameState(gameStarted = true) {
         }
         return false;
     }, [customers, inventory, equippedWorkers.Salesman, relics]);
-
     const craftItem = useCallback((item, quantity = 1) => {
         const canCraft = Object.entries(item.recipe).every(([matId, count]) => (inventory[matId] || 0) >= (count * quantity));
         if (canCraft) {
@@ -392,7 +331,6 @@ export function useGameState(gameStarted = true) {
                 next.crafted[item.id] = (next.crafted[item.id] || 0) + quantity;
                 return next;
             });
-            
             setDiscoveredCrafted(prev => {
                 const next = new Set(prev);
                 next.add(item.id);
@@ -402,21 +340,16 @@ export function useGameState(gameStarted = true) {
         }
         return false;
     }, [inventory]);
-
     const canRebirth = honor >= 10000 && dayCount >= 10;
-
     const performRebirth = useCallback(() => {
         if (!canRebirth) return false;
-
         const gemReward = Math.floor(100 * gemMultiplier);
         setGems(prev => prev + gemReward);
         setPermanentLuck(prev => prev + 0.1);
-
         const nextRebirthCount = rebirthCount + 1;
         if (nextRebirthCount % 2 === 0) {
             setShopLevel(prev => prev + 1);
         }
-
         setHonor(startingHonor);
         setPhase(UI_PHASES.DAY);
         setTimeLeft(dayDuration);
@@ -433,7 +366,6 @@ export function useGameState(gameStarted = true) {
         setRebirthCount(nextRebirthCount);
         return true;
     }, [canRebirth, gemMultiplier, rebirthCount, dayDuration, startingHonor]);
-
     useEffect(() => {
         if (!hasCrafter && !hasSeller) return;
         const interval = setInterval(() => {
@@ -456,7 +388,6 @@ export function useGameState(gameStarted = true) {
         }, 2000);
         return () => clearInterval(interval);
     }, [hasCrafter, hasSeller, customers, inventory, craftItem, sellToCustomer]);
-
     return {
         honor, setHonor, phase, timeLeft, dayCount, lastRecruit, isRolling, performRecruitRoll,
         autoRoll, setAutoRoll, fastRoll, setFastRoll, luckBoost, setLuckBoost,
@@ -478,3 +409,4 @@ export function useGameState(gameStarted = true) {
         showTutorial, setShowTutorial
     };
 }
+

@@ -11,9 +11,7 @@ import { useGameState, UI_PHASES } from './hooks/useGameState'
 import { MATERIALS, CRAFTED_ITEMS, RARITIES, GATHER_TABLE, WORKER_TYPES, WORKER_VARIANTS } from './utils/workerRNG'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import './App.css'
-
 import { BackgroundWorkers } from './components/BackgroundWorkers';
-
 function App() {
     const [mainTab, setMainTab] = useState('SHOP');
     const [activeTab, setActiveTab] = useState(null);
@@ -33,7 +31,6 @@ function App() {
     const [tabTooltipPos, setTabTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredTab, setHoveredTab] = useState(null);
     const [tabTooltipSide, setTabTooltipSide] = useState('right'); 
-
     const {
         honor, setHonor, phase, timeLeft, dayCount, lastRecruit, isRolling, performRecruitRoll,
         autoRoll, setAutoRoll, fastRoll, setFastRoll, luckBoost, setLuckBoost,
@@ -54,7 +51,6 @@ function App() {
         coins, addCoins, coinDropBonus, setCoinDropBonus, materialPurchases, setMaterialPurchases,
         showTutorial, setShowTutorial
     } = useGameState(gameStarted);
-
     const rollAudio = useRef(new Audio('/sounds/castanet-roll-120bpm-83002.mp3'));
     const coinDropAudio = useRef(new Audio('/sounds/coin-drop-1-104046.mp3'));
     const coinPayoutAudio = useRef(new Audio('/sounds/coin-payout-2-213523.mp3'));
@@ -63,18 +59,15 @@ function App() {
     const smallMonsterAttackAudio = useRef(new Audio('/sounds/small-monster-attack-195712.mp3'));
     const largeMonsterAttackAudio = useRef(new Audio('/sounds/large-monster-attack-195713.mp3'));
     const doorOpenAudio = useRef(new Audio('/sounds/open-door-stock-sfx-454246.mp3'));
-
     useEffect(() => {
         let interval;
         if (isRolling) {
-            
             if (!fastRoll) {
                 const names = ["SHUFFLING...", "ROLLING...", "CURSING...", "VOID CALLING...", "RECRUITING..."];
                 interval = setInterval(() => {
                     setShuffleText(names[Math.floor(Math.random() * names.length)]);
                 }, 80);
             }
-
             rollAudio.current.currentTime = 0;
             rollAudio.current.playbackRate = fastRoll ? 5.0 : 1.0; 
             rollAudio.current.loop = false; 
@@ -89,13 +82,11 @@ function App() {
             rollAudio.current.pause();
         };
     }, [isRolling, fastRoll]);
-
     useEffect(() => {
         if (rollAudio.current) {
             rollAudio.current.volume = masterVolume;
         }
     }, [masterVolume]);
-
     useEffect(() => {
         if (lastRecruit && (lastRecruit.rarityKey === 'MYTHIC' || lastRecruit.rarityKey === 'LEGENDARY') && !isRolling) {
             setEpicReveal(lastRecruit.rarityKey);
@@ -108,7 +99,6 @@ function App() {
             setEpicReveal(null);
         }
     }, [lastRecruit, isRolling]);
-
     useEffect(() => {
         if (lastRecruit && lastRecruit.variantKey && lastRecruit.variantKey !== 'NORMAL' && !isRolling) {
             setVariantReveal(lastRecruit);
@@ -121,10 +111,8 @@ function App() {
             setVariantReveal(null);
         }
     }, [lastRecruit, isRolling]);
-
     useEffect(() => {
         if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
-            
             const timer = setTimeout(() => {
                 if (autoRoll && !isRolling && !epicReveal && !variantReveal) {
                     performRecruitRoll();
@@ -133,26 +121,22 @@ function App() {
             return () => clearTimeout(timer);
         }
     }, [autoRoll, isRolling, epicReveal, variantReveal, performRecruitRoll]);
-
     const formatTime = useCallback((seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }, []);
-
     const getInfo = useCallback((id, type) => {
         if (type === 'material') {
             const m = MATERIALS.find(mat => mat.id === id);
             if (!m) return null;
             const rarity = RARITIES[m.rarity];
-
             let totalChance = 0;
             Object.values(GATHER_TABLE).forEach(pool => {
                 const loot = pool.find(l => l.id === id);
                 if (loot) totalChance = Math.max(totalChance, loot.chance);
             });
             const chanceText = totalChance > 0 ? `1/${Math.round(1 / totalChance)}` : "Quest Only";
-
             return {
                 name: m.name,
                 rarity: rarity.name,
@@ -165,17 +149,14 @@ function App() {
             return i ? { name: i.name, rarity: "CRAFTED", color: "#3b82f6", desc: `Specialized tool or artifact.` } : null;
         }
     }, []);
-
     const getEmoji = useCallback((id, type = 'material') => {
         if (type === 'material') {
             return MATERIALS.find(m => m.id === id)?.emoji || '📦';
         }
         return CRAFTED_ITEMS.find(i => i.id === id)?.emoji || '⚔️';
     }, []);
-
     useEffect(() => {
         const handleSwitch = (event) => {
-            
             if (doorOpenAudio?.current) {
                 doorOpenAudio.current.currentTime = 0;
                 doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
@@ -190,23 +171,19 @@ function App() {
         window.addEventListener('switchToShop', handleSwitch);
         return () => window.removeEventListener('switchToShop', handleSwitch);
     }, [doorOpenAudio]);
-
     useEffect(() => {
         if (honor > maxHonor) {
             setMaxHonor(honor);
         }
     }, [honor, maxHonor]);
-
     useEffect(() => {
         if (gameStarted && phase === UI_PHASES.DAY && honor === 0 && dayCount > 1) {
             setGameOver(true);
         }
     }, [gameStarted, phase, honor, dayCount]);
-
     if (!gameStarted) {
         return <StartScreen onStart={() => setGameStarted(true)} />;
     }
-
     if (gameOver) {
         return (
             <GameOverScreen
@@ -218,14 +195,11 @@ function App() {
             />
         );
     }
-
     return (
         <>
             {showTutorial && <Tutorial onComplete={() => setShowTutorial(false)} />}
-            
             <div className={`app-container ${phase} ${epicReveal ? 'screen-shake' : ''}`}>
             <BackgroundWorkers equippedWorkers={equippedWorkers} gatherEvents={gatherEvents} masterVolume={masterVolume} />
-
             {}
             {mainTab !== 'WORLD' && (
             <div style={{
@@ -256,7 +230,6 @@ function App() {
                     onClick={() => {
                         if (worldCooldown > 0) return; 
                         if (mainTab !== 'WORLD') {
-                            
                             if (doorOpenAudio?.current) {
                                 doorOpenAudio.current.currentTime = 0;
                                 doorOpenAudio.current.play().catch(e => console.log("Audio play blocked"));
@@ -283,7 +256,6 @@ function App() {
                 </button>
             </div>
             )}
-
             {}
             {epicReveal === 'LEGENDARY' && (
                 <div className="legendary-reveal-container">
@@ -293,7 +265,6 @@ function App() {
                     <div className="legendary-subtitle">1 in 10,000</div>
                 </div>
             )}
-
             {}
             {epicReveal === 'MYTHIC' && (
                 <div className="mythic-reveal-container">
@@ -304,7 +275,6 @@ function App() {
                     <div className="mythic-subtitle">1 in 100,000</div>
                 </div>
             )}
-
             {}
             {variantReveal && (
                 <div className={`variant-reveal-banner variant-${variantReveal.variantKey.toLowerCase()}`}>
@@ -315,7 +285,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             <div className="hud">
                 <div className="hud-left">
@@ -334,7 +303,6 @@ function App() {
                     <div className="stat-pill"><span>COINS</span><span style={{ color: '#ffd700' }}>{coins.toLocaleString()} 🪙</span></div>
                 </div>
             </div>
-
             {}
             <div className="side-menu left">
                 <div 
@@ -382,7 +350,6 @@ function App() {
                     onMouseLeave={() => setHoveredTab(null)}
                 >🪙</div>
             </div>
-
             {}
             <div 
                 className={`menu-btn ${activeTab === 'index' ? 'active' : ''}`}
@@ -408,7 +375,6 @@ function App() {
                 }}
                 onMouseLeave={() => setHoveredTab(null)}
             >⚙️</div>
-
             {}
             <div className="side-menu right">
                 <div 
@@ -453,7 +419,6 @@ function App() {
                     {rebirthCount > 0 && <div className="rebirth-count">{rebirthCount}</div>}
                 </div>
             </div>
-
             {}
             {mainTab === 'SHOP' && (
                 <div className="roll-interface">
@@ -472,7 +437,6 @@ function App() {
                             <div style={{ opacity: 0.1, fontSize: '0.7rem', fontWeight: '800', letterSpacing: '2px' }}>READY</div>
                         )}
                     </main>
-
                     <button className={`roll-main-btn ${isRolling ? 'rolling' : ''}`} onClick={performRecruitRoll} disabled={isRolling}>
                         {isRolling ? '...' : 'RECRUIT'}
                     </button>
@@ -499,7 +463,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             {activeTab === 'workers' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
@@ -520,7 +483,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {activeTab === 'customers' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -532,7 +494,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {activeTab === 'crafting' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -544,7 +505,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {activeTab === 'settings' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" style={{ maxWidth: '300px' }} onClick={e => e.stopPropagation()}>
@@ -572,7 +532,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             {activeTab === 'rebirth' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
@@ -595,7 +554,6 @@ function App() {
                                     </div>
                                 </div>
                             )}
-
                             <div className="rebirth-section">
                                 <div className="rebirth-section-title">📋 Requirements</div>
                                 <div className={`rebirth-req ${honor >= 10000 ? 'met' : ''}`}>
@@ -605,7 +563,6 @@ function App() {
                                     {dayCount >= 10 ? '✅' : '❌'} Day 10+ (Current: Day {dayCount})
                                 </div>
                             </div>
-
                             <div className="rebirth-section warning">
                                 <div className="rebirth-section-title">⚠️ You Will Lose</div>
                                 <div className="rebirth-loss">• All Honor ({honor.toLocaleString()})</div>
@@ -613,7 +570,6 @@ function App() {
                                 <div className="rebirth-loss">• All Materials & Crafted Items</div>
                                 <div className="rebirth-loss">• Day Count resets to 1</div>
                             </div>
-
                             <div className="rebirth-section gain">
                                 <div className="rebirth-section-title">✨ You Will Gain</div>
                                 <div className="rebirth-gain">
@@ -629,7 +585,6 @@ function App() {
                                     <span>+1 Level (on even rebirths)</span>
                                 </div>
                             </div>
-
                             <button
                                 className={`rbx-btn rebirth-confirm-btn ${canRebirth ? '' : 'disabled'}`}
                                 onClick={() => {
@@ -645,7 +600,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             {activeTab === 'index' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
@@ -660,7 +614,6 @@ function App() {
                             <div className={`tab ${indexSubTab === 'workers' ? 'active' : ''}`} onClick={() => setIndexSubTab('workers')}>WORKERS</div>
                             <div className={`tab ${indexSubTab === 'relics' ? 'active' : ''}`} onClick={() => setIndexSubTab('relics')}>RELICS</div>
                         </div>
-
                         {}
                         {indexSubTab === 'workers' && (
                             <div className="variant-tabs">
@@ -685,7 +638,6 @@ function App() {
                                 })}
                             </div>
                         )}
-
                         <div 
                             className="inventory-grid" 
                             style={{ maxHeight: '400px', overflowY: 'auto', cursor: 'grab', userSelect: 'none' }}
@@ -731,7 +683,6 @@ function App() {
                                     </div>
                                 );
                             })}
-
                             {indexSubTab === 'crafted' && CRAFTED_ITEMS.map(item => {
                                 const unlocked = discoveredCrafted.has(item.id);
                                 const tierColors = { BASIC: '#94a3b8', INTERMEDIATE: '#10b981', ADVANCED: '#a855f7', LEGENDARY: '#eab308', MYTHIC: '#ff0055' };
@@ -752,7 +703,6 @@ function App() {
                                     </div>
                                 );
                             })}
-
                             {indexSubTab === 'workers' && (
                                 <>
                                     {Object.keys(RARITIES).map(rarityKey => {
@@ -787,28 +737,21 @@ function App() {
                                     })}
                                 </>
                             )}
-
                             {indexSubTab === 'relics' && (() => {
                                 const ALL_RELICS = [
-                                    
                                     { name: 'Honor Relic', desc: '+10% Honor gained', rarity: 'COMMON', effect: 'honor_boost' },
                                     { name: 'Coin Charm', desc: '+20% Coin drops', rarity: 'COMMON', effect: 'coin_boost' },
                                     { name: 'Swift Relic', desc: '+10% Gather speed', rarity: 'COMMON', effect: 'gather_speed' },
-                                    
                                     { name: 'Worker Relic', desc: '+5% Worker gather rate', rarity: 'UNCOMMON', effect: 'gather_boost' },
                                     { name: 'Fortune Stone', desc: '+15% Coin drops', rarity: 'UNCOMMON', effect: 'coin_boost' },
                                     { name: 'Time Shard', desc: '+15s Day duration', rarity: 'UNCOMMON', effect: 'day_extend' },
-                                    
                                     { name: 'Luck Charm', desc: '+3% Recruit luck', rarity: 'RARE', effect: 'luck_boost' },
                                     { name: 'Battle Relic', desc: '+5 Bonus damage', rarity: 'RARE', effect: 'damage_boost' },
                                     { name: 'Shield Relic', desc: '+25 Max HP', rarity: 'RARE', effect: 'hp_boost' },
-                                    
                                     { name: 'Golden Idol', desc: '+50% Coin drops', rarity: 'EPIC', effect: 'coin_boost' },
                                     { name: 'Auto Recruiter', desc: 'Recruit +1 worker on day change', rarity: 'EPIC', effect: 'auto_recruit' },
-                                    
                                     { name: 'Twin Soul', desc: 'Roll 2 workers at once', rarity: 'MYTHIC', effect: 'double_roll' }
                                 ];
-
                                 const rarityColors = {
                                     'MYTHIC': '#ff0055',
                                     'LEGENDARY': '#eab308',
@@ -817,7 +760,6 @@ function App() {
                                     'UNCOMMON': '#22c55e',
                                     'COMMON': '#888'
                                 };
-
                                 return ALL_RELICS.map((relic, idx) => {
                                     const hasRelic = relics.some(r => r.name === relic.name);
                                     const color = rarityColors[relic.rarity];
@@ -852,7 +794,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {activeTab === 'inventory' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -958,11 +899,9 @@ function App() {
                                 )}
                             </div>
                         </div>
-
                         {}
                         {hoveredInvItem && (() => {
                             const item = hoveredInvItem;
-                            
                             if (item.type === 'material') {
                                 const mat = MATERIALS.find(m => m.id === item.id);
                                 return (
@@ -1027,7 +966,6 @@ function App() {
                                 const craftedItem = CRAFTED_ITEMS.find(ci => ci.id === item.id);
                                 const tierColors = { BASIC: '#94a3b8', INTERMEDIATE: '#10b981', ADVANCED: '#a855f7', LEGENDARY: '#eab308', MYTHIC: '#ff0055' };
                                 const color = tierColors[craftedItem?.tier] || '#3b82f6';
-                                
                                 return (
                                     <div style={{
                                         position: 'fixed',
@@ -1061,7 +999,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {activeTab === 'shop' && (
                 <div className="modal-overlay" onClick={() => setActiveTab(null)}>
                     <div className="modal-content rbx-panel" onClick={e => e.stopPropagation()}>
@@ -1110,7 +1047,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             {mainTab === 'MAT_SHOP' && (
                 <div className="modal-overlay" style={{ zIndex: 900 }}>
@@ -1133,7 +1069,6 @@ function App() {
                     </div>
                 </div>
             )}
-
             {}
             {mainTab === 'WORLD' && (
                 <World
@@ -1156,7 +1091,6 @@ function App() {
                     largeMonsterAttackAudio={largeMonsterAttackAudio}
                 />
             )}
-
             {}
             {doorTransition && (
                 <div style={{
@@ -1184,7 +1118,6 @@ function App() {
                     }} />
                 </div>
             )}
-
             {}
             {hoveredTab && (
                 <div style={{
@@ -1211,5 +1144,6 @@ function App() {
         </>
     )
 }
-
 export default App
+
+

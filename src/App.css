@@ -32,7 +32,7 @@ body {
     background: radial-gradient(circle at center, #a855f722 0%, #000 100%);
 }
 
-/* ANIMATIONS */
+
 @keyframes resultPop {
     0% {
         transform: scale(0.5);
@@ -200,7 +200,7 @@ body {
     animation: screenShake 0.5s infinite;
 }
 
-/* HUD & UI */
+
 .hud {
     position: absolute;
     top: 20px;
@@ -261,7 +261,7 @@ body {
     letter-spacing: 2px;
 }
 
-/* SIDE MENU */
+
 .side-menu {
     position: fixed;
     top: 50%;
@@ -377,7 +377,7 @@ body {
     border-color: #fff;
 }
 
-/* ROLL INTERFACE */
+
 .roll-interface {
     position: absolute;
     bottom: 40px;
@@ -446,7 +446,7 @@ body {
     background: var(--color-speed);
 }
 
-/* MODALS & TABS (EXPANDED) */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -467,13 +467,13 @@ body {
     border: 1px solid var(--rbx-border);
     width: 95%;
     max-width: 1600px;
-    /* Horizontally larger as requested */
+    
     display: flex;
     flex-direction: column;
     max-height: 90vh;
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
     overflow: visible;
-    /* Allow tooltips to go out */
+    
 }
 
 .rbx-btn:active {
@@ -481,7 +481,7 @@ body {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* BACKGROUND WORKER VISUALS */
+
 .background-visuals-layer {
     position: fixed;
     top: 0;
@@ -540,7 +540,7 @@ body {
     }
 }
 
-/* RARITY AURAS */
+
 .worker-aura-common .worker-cube {
     border-color: #71717a;
 }
@@ -586,7 +586,7 @@ body {
     }
 }
 
-/* FLYING ITEM - SUCKING ANIMATION */
+
 .flying-item {
     position: absolute;
     font-size: 1.8rem;
@@ -608,22 +608,22 @@ body {
     }
 
     100% {
-        /* Target coordinate near the side menu inventory icon (center of the icon area) */
+        
         left: 42px;
         top: calc(50vh - 45px);
-        /* Adjusted to hit the icon specifically */
+        
         transform: scale(0.1);
         opacity: 0;
     }
 }
 
-/* INVENTORY POP FEEDBACK */
+
 .inventory-pop-feedback {
     position: fixed;
     left: 42px;
-    /* Centered on the icon column */
+    
     top: calc(50vh - 60px);
-    /* Slightly above the icon */
+    
     color: #22c55e;
     font-weight: 950;
     font-size: 1.5rem;
@@ -697,7 +697,7 @@ body {
     display: none;
 }
 
-/* UNIVERSAL SCROLLBAR HIDE */
+
 * {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -713,7 +713,7 @@ body {
     padding: 20px 25px;
     text-align: center;
     font-size: 0.75rem;
-    /* Reduced font size to satisfy 'not what is inside' */
+    
     font-weight: 900;
     opacity: 0.3;
     cursor: pointer;
@@ -757,14 +757,14 @@ body {
     position: relative;
     border: 1px solid #333;
     transition: all 0.2s;
-    /* IMPORTANT: No transform/filter here so tooltips can escape via position: fixed */
+    
 }
 
 .inv-item:hover {
     border-color: #3b82f6;
     background: #2d2d2d;
     z-index: 1001;
-    /* Removed scale(1.04) to prevent creating a containing block for fixed children */
+    
 }
 
 .item-icon {
@@ -786,7 +786,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* UNIVERSAL TOOLTIP SYSTEM */
+
 .item-tooltip,
 .tooltip {
     position: fixed;
@@ -807,7 +807,7 @@ body {
     box-shadow: 0 40px 80px rgba(0, 0, 0, 1), 0 0 20px rgba(59, 130, 246, 0.2);
     backdrop-filter: blur(20px);
     z-index: 1000000;
-    /* Above all modals */
+    
 }
 
 .inv-item:hover .item-tooltip,
@@ -832,7 +832,7 @@ body {
     border-color: #333 !important;
 }
 
-/* Variant Sub-Tabs */
+
 .variant-tabs {
     display: flex;
     gap: 8px;
@@ -884,7 +884,7 @@ body {
     }
 }
 
-/* Variant Reveal Banner */
+
 .variant-reveal-banner {
     position: fixed;
     top: 80px;
@@ -958,7 +958,7 @@ body {
     margin-top: 4px;
 }
 
-/* Golden variant */
+
 .variant-golden {
     border-color: #ffd700;
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
@@ -969,7 +969,7 @@ body {
     text-shadow: 0 0 10px #ffd700;
 }
 
-/* Diamond variant */
+
 .variant-diamond {
     border-color: #00ffff;
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
@@ -980,7 +980,7 @@ body {
     text-shadow: 0 0 10px #00ffff;
 }
 
-/* Rainbow variant */
+
 .variant-rainbow {
     border: 3px solid transparent;
     background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)) padding-box,
@@ -1024,7 +1024,7 @@ body {
     }
 }
 
-/* Enchanted variant */
+
 .variant-enchanted {
     border-color: #ff00ff;
     box-shadow: 0 0 30px rgba(255, 0, 255, 0.5), 0 0 60px rgba(255, 0, 255, 0.3);
@@ -1048,7 +1048,7 @@ body {
     }
 }
 
-/* REBIRTH BUTTON & MODAL */
+
 .rebirth-btn {
     position: relative;
 }
@@ -1238,7 +1238,7 @@ body {
     z-index: 2;
 }
 
-/* Rarity Border Classes */
+
 .inv-item.rarity-border-common {
     border-color: #94a3b833;
 }
@@ -1263,7 +1263,7 @@ body {
     border-color: #ff005533;
 }
 
-/* Rare Gather Animation */
+
 @keyframes rareGatherPop {
     0% {
         transform: translate(-50%, -60%) scale(0.5);
@@ -1318,7 +1318,7 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
-/* Rare Flying Item Glow */
+
 @keyframes rareGlow {
     0% {
         filter: drop-shadow(0 0 5px gold);
@@ -1347,9 +1347,7 @@ body {
     animation: rareGlow 0.5s infinite alternate;
 }
 
-/* ====================================
-   LEGENDARY REVEAL ANIMATION
-   ==================================== */
+
 .legendary-reveal-container {
     position: fixed;
     top: 0;
@@ -1501,9 +1499,7 @@ body {
     }
 }
 
-/* ====================================
-   MYTHIC REVEAL ANIMATION
-   ==================================== */
+
 .mythic-reveal-container {
     position: fixed;
     top: 0;
@@ -1666,7 +1662,7 @@ body {
     }
 }
 
-/* Enhanced screen shake for Mythic */
+
 .screen-shake {
     animation: screenShakeIntense 0.1s infinite;
 }
@@ -1697,9 +1693,7 @@ body {
     }
 }
 
-/* ====================================
-   SHOP OVERHAUL & GEM SYSTEM
-   ==================================== */
+
 
 .shop-container {
     background: #1a1a1a;
@@ -1729,7 +1723,7 @@ body {
     text-shadow: 0 0 10px currentColor;
 }
 
-/* Gem Shop Specifics */
+
 .inv-item {
     border: 1px solid #333;
     border-radius: 8px;
@@ -1773,7 +1767,7 @@ body {
     animation: gemFloat 3s infinite ease-in-out;
 }
 
-/* DOOR TRANSITION ANIMATIONS */
+
 @keyframes doorOpenLeft {
     0% {
         transform: translateX(0);

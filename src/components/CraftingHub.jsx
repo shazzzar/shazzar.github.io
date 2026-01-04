@@ -1,11 +1,9 @@
 import { useState, useMemo, useRef } from 'react';
 import { MATERIALS, CRAFTED_ITEMS } from '../utils/workerRNG';
-
 export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
     const [staged, setStaged] = useState({}); 
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredItem, setHoveredItem] = useState(null);
-
     const addToStage = (id) => {
         const available = inventory[id] || 0;
         const currentInStage = staged[id] || 0;
@@ -13,63 +11,49 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
             setStaged(prev => ({ ...prev, [id]: currentInStage + 1 }));
         }
     };
-
     const removeFromStage = (id) => {
         if (staged[id] > 0) {
             setStaged(prev => ({ ...prev, [id]: prev[id] - 1 }));
         }
     };
-
     const clearStage = () => setStaged({});
-
     const { resultItem, multiplier } = useMemo(() => {
         const stagedEntries = Object.entries(staged).filter(([_, count]) => count > 0);
         if (stagedEntries.length === 0) return { resultItem: null, multiplier: 0 };
-
         for (const item of CRAFTED_ITEMS) {
             const recipeEntries = Object.entries(item.recipe);
-
             if (recipeEntries.length !== stagedEntries.length) continue;
-
             const firstMat = recipeEntries[0];
             const stagedCount = staged[firstMat[0]] || 0;
             const neededCount = firstMat[1];
-
             if (stagedCount % neededCount !== 0) continue;
             const mult = stagedCount / neededCount;
             if (mult === 0) continue;
-
             const matches = recipeEntries.every(([id, needed]) => staged[id] === (needed * mult));
             if (matches) return { resultItem: item, multiplier: mult };
         }
         return { resultItem: null, multiplier: 0 };
     }, [staged]);
-
     const handleCraft = () => {
         if (!resultItem) return;
-
         if (bingAudio?.current) {
             bingAudio.current.currentTime = 0;
             bingAudio.current.volume = 0.4;
             bingAudio.current.play().catch(e => console.log("Audio play blocked"));
-            
             setTimeout(() => {
                 bingAudio.current.currentTime = 0;
                 bingAudio.current.play().catch(e => console.log("Audio play blocked"));
             }, 300);
         }
-        
         const success = craftItem(resultItem, multiplier);
         if (success) {
             clearStage();
         }
     };
-
     const addToStageFromRecipe = (recipe) => {
         setStaged(prev => {
             const next = { ...prev };
             let canAddAll = true;
-
             Object.entries(recipe.recipe).forEach(([id, needed]) => {
                 const available = inventory[id] || 0;
                 const currentStaged = prev[id] || 0;
@@ -77,7 +61,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                     canAddAll = false;
                 }
             });
-
             if (canAddAll) {
                 Object.entries(recipe.recipe).forEach(([id, needed]) => {
                     next[id] = (next[id] || 0) + needed;
@@ -87,7 +70,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
             return prev;
         });
     };
-
     const handleMouseEnter = (e, item) => {
         const rect = e.currentTarget.getBoundingClientRect();
         setTooltipPos({
@@ -96,11 +78,9 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
         });
         setHoveredItem(item);
     };
-
     const handleMouseLeave = () => {
         setHoveredItem(null);
     };
-
     return (
         <div style={{ display: 'flex', gap: '20px', padding: '20px', height: '100%', minHeight: '480px' }}>
             {}
@@ -111,7 +91,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                         const recipeParts = Object.entries(item.recipe);
                         const isRequested = customers && customers.some(c => c.request.id === item.id);
                         const requestCount = customers ? customers.filter(c => c.request.id === item.id).length : 0;
-
                         return (
                             <div 
                                 key={item.id} 
@@ -169,7 +148,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                     })}
                 </div>
             </div>
-
             {}
             <div style={{ flex: 2, background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -190,7 +168,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                         CLEAR
                     </button>
                 </div>
-
                 {}
                 <div style={{
                     flex: 1, border: '2px dashed #333', borderRadius: '15px',
@@ -217,12 +194,10 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                             </div>
                         );
                     })}
-
                     {Object.keys(staged).every(k => staged[k] === 0) && (
                         <div style={{ color: '#444', fontSize: '0.8rem', fontWeight: '900' }}>SELECT MATERIALS</div>
                     )}
                 </div>
-
                 {}
                 <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px', textAlign: 'center' }}>
                     {resultItem ? (
@@ -236,7 +211,6 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
                     )}
                 </div>
             </div>
-
             {}
             {hoveredItem && (
                 <div 
@@ -287,3 +261,4 @@ export function CraftingHub({ inventory, craftItem, customers, bingAudio }) {
         </div>
     );
 }
+

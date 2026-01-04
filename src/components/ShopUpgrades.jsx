@@ -1,5 +1,4 @@
 import React from 'react';
-
 export function ShopUpgrades({
     mode, honor, setHonor, permanentLuck, setPermanentLuck,
     gems, setGems, shopLevel,
@@ -11,7 +10,6 @@ export function ShopUpgrades({
     bonusDamage, setBonusDamage, bonusMaxHP, setBonusMaxHP,
     coinDropBonus, setCoinDropBonus
 }) {
-    
     const LUCK_COST = 500 * Math.pow(2, (permanentLuck - 1) / 0.1);
     const DAY_COST = 1000 * Math.pow(1.5, (dayDuration - 120) / 30);
     const NIGHT_COST = 1000 * Math.pow(1.5, (nightDuration - 120) / 30);
@@ -20,112 +18,96 @@ export function ShopUpgrades({
     const DAMAGE_COST = 2000 * Math.pow(1.8, bonusDamage / 5);
     const HP_COST = 1500 * Math.pow(1.6, bonusMaxHP / 25);
     const COIN_BONUS_COST = 5000 * Math.pow(2, (coinDropBonus - 1) / 0.5);
-
     const buyLuck = () => {
         if (honor >= LUCK_COST) {
             setHonor(prev => prev - Math.floor(LUCK_COST));
             setPermanentLuck(prev => prev + 0.1);
         }
     };
-
     const buyDay = () => {
         if (honor >= DAY_COST) {
             setHonor(prev => prev - Math.floor(DAY_COST));
             setDayDuration(prev => prev + 30);
         }
     };
-
     const buyNight = () => {
         if (honor >= NIGHT_COST) {
             setHonor(prev => prev - Math.floor(NIGHT_COST));
             setNightDuration(prev => prev + 30);
         }
     };
-
     const buySlots = () => {
         if (honor >= SLOTS_COST) {
             setHonor(prev => prev - Math.floor(SLOTS_COST));
             setWorkerSlots(prev => prev + 1);
         }
     };
-
     const buySpawn = () => {
         if (honor >= SPAWN_COST) {
             setHonor(prev => prev - Math.floor(SPAWN_COST));
             setCustomerSpawnMod(prev => prev + 0.1);
         }
     };
-
     const buyDamage = () => {
         if (honor >= DAMAGE_COST) {
             setHonor(prev => prev - Math.floor(DAMAGE_COST));
             setBonusDamage(prev => prev + 5);
         }
     };
-
     const buyHP = () => {
         if (honor >= HP_COST) {
             setHonor(prev => prev - Math.floor(HP_COST));
             setBonusMaxHP(prev => prev + 25);
         }
     };
-
     const buyCoinBonus = () => {
         if (honor >= COIN_BONUS_COST) {
             setHonor(prev => prev - Math.floor(COIN_BONUS_COST));
             setCoinDropBonus(prev => prev + 0.5);
         }
     };
-
     const buyCrafter = () => {
         if (gems >= 500 && !hasCrafter) {
             setGems(prev => prev - 500);
             setHasCrafter(true);
         }
     };
-
     const buySeller = () => {
         if (gems >= 500 && !hasSeller) {
             setGems(prev => prev - 500);
             setHasSeller(true);
         }
     };
-
     const buyGemMult = () => {
         if (gems >= 250) {
             setGems(prev => prev - 250);
             setGemMultiplier(prev => prev + 0.5);
         }
     };
-
     const buyLuckEssence = () => {
         if (gems >= 100) {
             setGems(prev => prev - 100);
             setPermanentLuck(prev => prev + 0.05);
         }
     };
-
     const buyMaxCustomers = () => {
         if (gems >= 300) {
             setGems(prev => prev - 300);
             setMaxCustomers(prev => prev + 2);
         }
     };
-
     const buyGatherSpeed = () => {
         if (gems >= 400) {
             setGems(prev => prev - 400);
             setGatherSpeed(prev => prev + 0.2);
         }
     };
-
     const buyStartingHonor = () => {
         if (gems >= 200) {
             setGems(prev => prev - 200);
             setStartingHonor(prev => prev + 1000);
         }
     };
-
     return (
         <div style={{ padding: '20px' }}>
             <h3 style={{ color: '#ffd700', marginBottom: '15px', fontSize: '1.2rem', fontWeight: '900', letterSpacing: '1.5px' }}>HONOR UPGRADES</h3>
@@ -133,7 +115,6 @@ export function ShopUpgrades({
                 <ShopItem title="LUCK UPGRADE" icon="🍀" desc="Permanent recruit luck boost." value={`${permanentLuck.toFixed(2)}x`} cost={LUCK_COST} currency="HONOR" onBuy={buyLuck} afford={honor >= LUCK_COST} />
                 <ShopItem title="DAY DURATION" icon="☀️" desc="+30s Day duration." value={`${dayDuration}s`} cost={DAY_COST} currency="HONOR" onBuy={buyDay} afford={honor >= DAY_COST} />
                 <ShopItem title="NIGHT DURATION" icon="🌙" desc="+30s Night duration." value={`${nightDuration}s`} cost={NIGHT_COST} currency="HONOR" onBuy={buyNight} afford={honor >= NIGHT_COST} />
-
                 <ShopItem
                     title="DROP MORE COINS"
                     icon="🪙"
@@ -144,7 +125,6 @@ export function ShopUpgrades({
                     onBuy={buyCoinBonus}
                     afford={honor >= COIN_BONUS_COST}
                 />
-
                 {}
                 <ShopItem
                     title="WORKER SLOTS"
@@ -158,7 +138,6 @@ export function ShopUpgrades({
                     locked={shopLevel < 2}
                     lockText="Lvl 2 Shop"
                 />
-
                 <ShopItem
                     title="CUSTOMER FLOW"
                     icon="🤝"
@@ -172,7 +151,6 @@ export function ShopUpgrades({
                     lockText="Lvl 4 Shop"
                 />
             </div>
-
             <h3 style={{ color: '#ef4444', marginTop: '30px', marginBottom: '15px', fontSize: '1.2rem', fontWeight: '900', letterSpacing: '1.5px' }}>⚔️ COMBAT UPGRADES</h3>
             <div className="inventory-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 <ShopItem
@@ -196,7 +174,6 @@ export function ShopUpgrades({
                     afford={honor >= HP_COST}
                 />
             </div>
-
             <h3 style={{ color: '#ff69b4', marginTop: '30px', marginBottom: '15px', fontSize: '1.2rem', fontWeight: '900', letterSpacing: '1.5px' }}>GEM UPGRADES</h3>
             <div className="inventory-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 <ShopItem title="AUTO-CRAFTER" icon="⚒️" desc="Automatically crafts requested items if materials exist." cost={500} currency="GEMS" owned={hasCrafter} onBuy={buyCrafter} afford={gems >= 500} />
@@ -210,11 +187,9 @@ export function ShopUpgrades({
         </div>
     );
 }
-
 function ShopItem({ title, icon, desc, value, cost, currency, onBuy, afford, owned, locked, lockText }) {
     const isGems = currency === 'GEMS';
     const canAfford = afford || (isGems && !owned); 
-
     return (
         <div className={`inv-item ${locked ? 'locked' : ''}`} style={{
             padding: '20px',
@@ -239,7 +214,6 @@ function ShopItem({ title, icon, desc, value, cost, currency, onBuy, afford, own
             <div style={{ fontWeight: '900', fontSize: '0.7rem', color: isGems ? '#f472b6' : '#fbbf24' }}>{title}</div>
             {value && <div style={{ fontSize: '1.2rem', fontWeight: '900', margin: '5px 0' }}>{value}</div>}
             <div style={{ fontSize: '0.6rem', opacity: 0.5, textAlign: 'center', marginBottom: '15px', height: '30px' }}>{desc}</div>
-
             <button
                 className="rbx-btn"
                 style={{
@@ -258,3 +232,4 @@ function ShopItem({ title, icon, desc, value, cost, currency, onBuy, afford, own
         </div>
     );
 }
+

@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { rollWorker, RARITIES, CRAFTED_ITEMS, WORKER_TYPES } from '../utils/workerRNG';
-
 export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarities, toggleAutoDelete }) {
     const [showDeleteConfig, setShowDeleteConfig] = useState(false);
     const [hoveredWorker, setHoveredWorker] = useState(null);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const filteredWorkers = workers;
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             {}
@@ -73,7 +71,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                         cursor: 'pointer',
                         boxShadow: showDeleteConfig ? '0 4px 0 #991b1b' : '0 4px 0 #111'
                     }} onClick={() => setShowDeleteConfig(!showDeleteConfig)}>DELETE</button>
-
                     <button className="rbx-btn" style={{
                         padding: '10px 18px',
                         fontSize: '0.75rem',
@@ -87,7 +84,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                     }} onClick={equipBest}>EQUIP BEST</button>
                 </div>
             </div>
-
             {}
             {showDeleteConfig && (
                 <div style={{
@@ -128,7 +124,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                     </div>
                 </div>
             )}
-
             {}
             <div className="inventory-grid">
                 {filteredWorkers.map((w) => {
@@ -142,7 +137,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                         MYTHIC: { chance: '10x', amount: '10x' }
                     };
                     const stats = rarityStats[w.rarityKey] || rarityStats.COMMON;
-
                     return (
                         <div 
                             key={w.id} 
@@ -181,7 +175,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                     </div>
                 )}
             </div>
-
             {}
             {hoveredWorker && (() => {
                 const w = hoveredWorker;
@@ -194,7 +187,6 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
                     MYTHIC: { chance: '10x', amount: '10x' }
                 };
                 const stats = rarityStats[w.rarityKey] || rarityStats.COMMON;
-                
                 return (
                     <div style={{
                         position: 'fixed',
@@ -250,3 +242,4 @@ export function WorkerHub({ workers, equippedWorkers, equipBest, autoDeleteRarit
         </div>
     );
 }
+

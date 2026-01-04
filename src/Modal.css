@@ -1,4 +1,4 @@
-/* Roblox-Style Modal Overhaul */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -19,7 +19,7 @@
     display: flex;
     flex-direction: column;
     border-radius: 8px;
-    /* Sharper Roblox corners */
+    
     overflow: hidden;
     animation: modalPop 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     background: #0b0b0f;
@@ -52,7 +52,7 @@
 
 .worker-hub h2 {
     display: none;
-    /* Hidden because we use a header in App.jsx */
+    
 }
 
 .roll-btn {

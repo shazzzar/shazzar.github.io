@@ -120,7 +120,7 @@
     }
 }
 
-/* COMBAT */
+
 .combat-screen {
     position: fixed;
     top: 0;
@@ -188,7 +188,7 @@
     width: 100%;
     color: #fff;
     display: none;
-    /* Hide old combat style */
+    
 }
 
 .battle-ui {
@@ -288,7 +288,7 @@
     z-index: 1;
 }
 
-/* COOLDOWN */
+
 .world-cooldown {
     color: #000;
     font-weight: 900;
@@ -326,7 +326,7 @@
     transform: scale(0.95);
 }
 
-/* COOLDOWN */
+
 .world-cooldown {
     position: fixed;
     top: 0;
@@ -454,7 +454,7 @@
     background-size: 8px 8px;
 }
 
-/* DROPPED ITEMS */
+
 @keyframes itemBob {
 
     0%,

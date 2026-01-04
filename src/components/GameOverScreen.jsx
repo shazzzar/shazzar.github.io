@@ -1,5 +1,4 @@
 import React from 'react';
-
 export const GameOverScreen = ({ dayCount, maxHonor, onRestart }) => {
     return (
         <div style={{
@@ -32,7 +31,6 @@ export const GameOverScreen = ({ dayCount, maxHonor, onRestart }) => {
             }}>
                 Your business has been consumed by the void.
             </h2>
-
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -49,7 +47,6 @@ export const GameOverScreen = ({ dayCount, maxHonor, onRestart }) => {
                     <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '5px' }}>DAYS SURVIVED</div>
                     <div style={{ fontSize: '2rem', fontWeight: '900', color: '#fff' }}>{dayCount}</div>
                 </div>
-
                 <div style={{
                     background: '#1a1a1a',
                     padding: '20px 40px',
@@ -61,7 +58,6 @@ export const GameOverScreen = ({ dayCount, maxHonor, onRestart }) => {
                     <div style={{ fontSize: '2rem', fontWeight: '900', color: '#a855f7' }}>{maxHonor.toLocaleString()}</div>
                 </div>
             </div>
-
             <button
                 onClick={onRestart}
                 style={{
@@ -84,3 +80,4 @@ export const GameOverScreen = ({ dayCount, maxHonor, onRestart }) => {
         </div>
     );
 };
+

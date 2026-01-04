@@ -1,6 +1,5 @@
 import React from 'react';
 import '../App.css';
-
 export const StartScreen = ({ onStart }) => {
     return (
         <div style={{
@@ -44,7 +43,6 @@ export const StartScreen = ({ onStart }) => {
                     An Idle Crafting Adventure
                 </p>
             </div>
-
             {}
             <div className="rbx-panel" style={{
                 maxWidth: '600px',
@@ -70,7 +68,6 @@ export const StartScreen = ({ onStart }) => {
                         textTransform: 'uppercase'
                     }}>📖 How To Play</h3>
                 </div>
-                
                 <div style={{ padding: '30px 40px' }}>
                     <div style={{ 
                         display: 'grid',
@@ -88,7 +85,6 @@ export const StartScreen = ({ onStart }) => {
                             <div style={{ color: '#3b82f6', fontWeight: '900', marginBottom: '4px' }}>☀️ DAY PHASE</div>
                             <div style={{ color: '#aaa', fontSize: '0.85rem' }}>Recruit workers & fulfill customer orders</div>
                         </div>
-                        
                         <div style={{
                             background: 'rgba(168, 85, 247, 0.1)',
                             border: '1px solid rgba(168, 85, 247, 0.3)',
@@ -99,7 +95,6 @@ export const StartScreen = ({ onStart }) => {
                             <div style={{ color: '#a855f7', fontWeight: '900', marginBottom: '4px' }}>🌙 NIGHT PHASE</div>
                             <div style={{ color: '#aaa', fontSize: '0.85rem' }}>Workers rest (reduced efficiency), no customers</div>
                         </div>
-                        
                         <div style={{
                             background: 'rgba(16, 185, 129, 0.1)',
                             border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -110,7 +105,6 @@ export const StartScreen = ({ onStart }) => {
                             <div style={{ color: '#10b981', fontWeight: '900', marginBottom: '4px' }}>⚒️ CRAFTING</div>
                             <div style={{ color: '#aaa', fontSize: '0.85rem' }}>Gather materials and craft valuable items</div>
                         </div>
-                        
                         <div style={{
                             background: 'rgba(234, 179, 8, 0.1)',
                             border: '1px solid rgba(234, 179, 8, 0.3)',
@@ -121,7 +115,6 @@ export const StartScreen = ({ onStart }) => {
                             <div style={{ color: '#eab308', fontWeight: '900', marginBottom: '4px' }}>🌍 EXPLORATION</div>
                             <div style={{ color: '#aaa', fontSize: '0.85rem' }}>Fight monsters, collect coins & find relics</div>
                         </div>
-                        
                         <div style={{
                             background: 'rgba(239, 68, 68, 0.1)',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -135,7 +128,6 @@ export const StartScreen = ({ onStart }) => {
                     </div>
                 </div>
             </div>
-
             {}
             <button
                 className="rbx-btn"
@@ -164,7 +156,6 @@ export const StartScreen = ({ onStart }) => {
             >
                 ▶ Start Game
             </button>
-
             {}
             <div style={{
                 position: 'absolute',
@@ -179,3 +170,4 @@ export const StartScreen = ({ onStart }) => {
         </div>
     );
 };
+

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { MATERIALS } from '../utils/workerRNG';
-
 export function MaterialShop({
     coins,
     addCoins,
@@ -11,7 +10,6 @@ export function MaterialShop({
 }) {
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
     const [hoveredItem, setHoveredItem] = useState(null);
-    
     const BASE_PRICES = {
         'COMMON': 10,
         'UNCOMMON': 25,
@@ -20,14 +18,12 @@ export function MaterialShop({
         'LEGENDARY': 500,
         'MYTHIC': 2000
     };
-
     const getPrice = (materialId, rarity) => {
         const basePrice = BASE_PRICES[rarity] || 10;
         const purchases = materialPurchases[materialId] || 0;
         const increaseFactor = Math.floor(purchases / 10);
         return Math.floor(basePrice * (1 + increaseFactor * 0.5));
     };
-
     const buyMaterial = (material) => {
         const price = getPrice(material.id, material.rarity);
         if (coins >= price) {
@@ -37,7 +33,6 @@ export function MaterialShop({
                 ...prev,
                 [material.id]: (prev[material.id] || 0) + 1
             }));
-
             if (coinPayoutAudio?.current) {
                 coinPayoutAudio.current.currentTime = 0;
                 coinPayoutAudio.current.volume = 0.5;
@@ -45,12 +40,10 @@ export function MaterialShop({
             }
         }
     };
-
     const sortedMaterials = [...MATERIALS].sort((a, b) => {
         const rarityOrder = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC'];
         return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
     });
-
     return (
         <>
             <div className="inventory-grid">
@@ -58,7 +51,6 @@ export function MaterialShop({
                     const price = getPrice(mat.id, mat.rarity);
                     const purchases = materialPurchases[mat.id] || 0;
                     const canAfford = coins >= price;
-
                     const rarityColors = {
                         'MYTHIC': '#ff0055',
                         'LEGENDARY': '#eab308',
@@ -67,7 +59,6 @@ export function MaterialShop({
                         'UNCOMMON': '#22c55e',
                         'COMMON': '#888'
                     };
-
                     return (
                         <div 
                             key={mat.id} 
@@ -112,7 +103,6 @@ export function MaterialShop({
                     );
                 })}
             </div>
-
             {}
             {hoveredItem && (() => {
                 const { mat, price, purchases, canAfford } = hoveredItem;
@@ -124,7 +114,6 @@ export function MaterialShop({
                     'UNCOMMON': '#22c55e',
                     'COMMON': '#888'
                 };
-                
                 return (
                     <div style={{
                         position: 'fixed',
@@ -173,3 +162,4 @@ export function MaterialShop({
         </>
     );
 }
+

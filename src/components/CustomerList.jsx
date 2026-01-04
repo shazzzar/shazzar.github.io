@@ -1,7 +1,5 @@
 import { WORKER_TYPES } from '../utils/workerRNG';
-
 export function CustomerList({ customers, inventory, sellToCustomer }) {
-
     return (
         <div className="inventory-grid" style={{ padding: '20px' }}>
             {customers.length === 0 && (
@@ -13,7 +11,6 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
             {customers.map(cust => {
                 const canSell = (inventory.crafted[cust.request.id] || 0) > 0;
                 const isShady = cust.isShady || false;
-
                 return (
                     <div key={cust.id} className="inv-item" style={{
                         opacity: canSell ? 1 : 0.6,
@@ -37,7 +34,6 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
                         <div style={{ fontSize: '0.9rem', fontWeight: '900', color: isShady ? '#a855f7' : '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
                             {cust.request.emoji} {cust.request.name}
                         </div>
-
                         <button
                             className="rbx-btn"
                             disabled={!canSell}
@@ -53,7 +49,6 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
                         >
                             {canSell ? 'SELL ITEM' : 'NEED ITEM'}
                         </button>
-
                         <div style={{ fontSize: '0.65rem', fontWeight: '900', color: '#fbbf24', marginTop: '8px' }}>
                             +{cust.reward.toLocaleString()} Honor
                         </div>
@@ -63,3 +58,4 @@ export function CustomerList({ customers, inventory, sellToCustomer }) {
         </div>
     );
 }
+

@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import '../Modal.css';
-
 export function Tutorial({ onComplete }) {
     const [step, setStep] = useState(0);
-
     const tutorialSteps = [
         {
             title: "Welcome to CURSED BUSINESS! 👹",
@@ -173,9 +171,7 @@ export function Tutorial({ onComplete }) {
             )
         }
     ];
-
     const currentStep = tutorialSteps[step];
-
     const handleNext = () => {
         if (step < tutorialSteps.length - 1) {
             setStep(step + 1);
@@ -183,11 +179,9 @@ export function Tutorial({ onComplete }) {
             onComplete();
         }
     };
-
     const handleSkip = () => {
         onComplete();
     };
-
     return (
         <div className="modal-overlay" style={{ zIndex: 10000, background: 'rgba(0, 0, 0, 0.95)' }}>
             <div className="modal-content rbx-panel" style={{ maxWidth: '600px', maxHeight: '80vh' }}>
@@ -255,3 +249,4 @@ export function Tutorial({ onComplete }) {
         </div>
     );
 }
+
